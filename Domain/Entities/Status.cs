@@ -8,5 +8,11 @@ namespace Domain.Entities
 {
     public class Status
     {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        
+        //Relacion de tablas
+        public ICollection<ProjectProposal> ProjectProposals { get; set; }
+        public ICollection<ProjectApprovalStep> ProjectApprovalSteps { get; set; }
     }
 }
