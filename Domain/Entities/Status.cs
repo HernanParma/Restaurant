@@ -9,10 +9,10 @@ namespace Domain.Entities
     public class Status
     {
         public int Id { get; set; }
-        public string Name { get; set; }
-        
+        public string Name { get; set; } = default!;
+
         //Relacion de tablas
-        public ICollection<ProjectProposal> ProjectProposals { get; set; }
-        public ICollection<ProjectApprovalStep> ProjectApprovalSteps { get; set; }
+        public ICollection<Order> Orders { get; set; } = new List<Order>();
+        public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
 }

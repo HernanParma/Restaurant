@@ -9,10 +9,8 @@ namespace Domain.Entities
     public class DeliveryType
     {
         public int Id { get; set; }
-        public string Name { get; set; }
-
+        public string Name { get; set; } = default!;
         //Relacion de tablas
-        public ICollection<ProjectProposal> ProjectProposals { get; set; }
-        public ICollection<ProjectApprovalStep> ProjectApprovalSteps { get; set; }
+        public ICollection<Order> Orders { get; set; } = new List<Order>();
     }
 }

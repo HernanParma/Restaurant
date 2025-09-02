@@ -1,0 +1,84 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using Application.Dishes;
+using Application.Dishes.Dtos;
+using Swashbuckle.AspNetCore.Annotations;
+
+namespace RestaurantAPI.Controllers
+{
+    [ApiController]
+    [Route("api/v1/[controller]")]
+    [Produces("application/json")]
+    public class DishController : ControllerBase
+    {
+        private readonly IDishService _service;
+        public DishController(IDishService service) => _service = service;
+
+        [HttpPost]
+        [SwaggerOperation(
+            Summary = "Crear nuevo plato",
+            Description = "Crea un plato. Reglas: nombre único, precio > 0 y categoría existente."
+        )]
+        //[SwaggerResponse(StatusCodes.Status201Created, "Plato creado exitosamente", typeof(DishResponseDto))]
+        //[SwaggerResponse(StatusCodes.Status400BadRequest, "Datos de entrada inválidos")]
+        //[SwaggerResponse(StatusCodes.Status409Conflict, "Ya existe un plato con el mismo nombre")]
+        public async Task<IActionResult> Create([FromBody] DishCreateDto dto, CancellationToken ct)
+        {
+            try
+            {
+                var created = await _service.CreateAsync(dto, ct);
+                return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+            }
+            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+            catch (KeyNotFoundException ex) { return BadRequest(new { message = ex.Message }); }
+            catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
+        }
+
+        [HttpGet]
+        [SwaggerOperation(
+            Summary = "Buscar platos",
+            Description = "Devuelve una lista de platos con filtros opcionales (nombre, categoría, solo activos) y orden por precio (asc/desc)."
+        )]
+       
+        public async Task<IActionResult> Get([FromQuery] DishFilterQuery query, CancellationToken ct)
+        {
+            if (!string.IsNullOrWhiteSpace(query.SortByPrice))
+            {
+                var v = query.SortByPrice.Trim().ToLowerInvariant();
+                if (v is not ("asc" or "desc"))
+                    return BadRequest(new { message = "sortByPrice debe ser 'asc' o 'desc'." });
+                query.SortByPrice = v;
+            }
+
+            var results = await _service.SearchAsync(query, ct);
+            return Ok(results);
+        } 
+        // PUT /api/v1/Dish/{id}  -> Actualizar plato existente
+        [HttpPut("{id:guid}")]
+        [SwaggerOperation(
+            Summary = "Actualizar plato existente",
+            Description = "Actualiza los datos del plato indicado. Mantiene las mismas reglas de validación."
+        )]
+        
+        public async Task<IActionResult> Update(Guid id, [FromBody] DishUpdateDto dto, CancellationToken ct)
+        {
+            try
+            {
+                var updated = await _service.UpdateAsync(id, dto, ct);
+                return Ok(updated);
+            }
+            catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+            catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
+        }
+
+        // (oculto en la UI principal, pero necesario para CreatedAtAction del POST)
+        [HttpGet("{id:guid}")]
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+        {
+            var dish = await _service.GetByIdAsync(id, ct);
+            return dish is null ? NotFound() : Ok(dish);
+        }
+    }
+}

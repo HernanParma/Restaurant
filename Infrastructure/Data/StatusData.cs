@@ -20,7 +20,7 @@ namespace Infrastructure.Data
                 new Status { Id = 2, Name = "In progress" },
                 new Status { Id = 3, Name = "Ready" },
                 new Status { Id = 4, Name = "Delivery" },
-                new Status { Id = 4, Name = "Closed" });
+                new Status { Id = 5, Name = "Closed" });
         }
     }
 }
