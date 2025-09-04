@@ -36,23 +36,20 @@ namespace RestaurantAPI.Controllers
 
         [HttpGet]
         [SwaggerOperation(
-            Summary = "Buscar platos",
-            Description = "Devuelve una lista de platos con filtros opcionales (nombre, categoría, solo activos) y orden por precio (asc/desc)."
-        )]
-       
+       Summary = "Buscar platos",
+       Description =
+   @"Obtiene una lista de platos del menú con opciones de filtrado y ordenamiento."
+   )]
+        [ProducesResponseType(typeof(IEnumerable<DishResponseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Get([FromQuery] DishFilterQuery query, CancellationToken ct)
         {
-            if (!string.IsNullOrWhiteSpace(query.SortByPrice))
-            {
-                var v = query.SortByPrice.Trim().ToLowerInvariant();
-                if (v is not ("asc" or "desc"))
-                    return BadRequest(new { message = "sortByPrice debe ser 'asc' o 'desc'." });
-                query.SortByPrice = v;
-            }
-
             var results = await _service.SearchAsync(query, ct);
             return Ok(results);
-        } 
+        }
+
+
+
         // PUT /api/v1/Dish/{id}  -> Actualizar plato existente
         [HttpPut("{id:guid}")]
         [SwaggerOperation(
@@ -71,7 +68,6 @@ namespace RestaurantAPI.Controllers
             catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
             catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
         }
-
         // (oculto en la UI principal, pero necesario para CreatedAtAction del POST)
         [HttpGet("{id:guid}")]
         [ApiExplorerSettings(IgnoreApi = true)]

@@ -1,6 +1,7 @@
 ﻿using Application.Dishes;
 using Application.Dishes.Dtos;
 using Domain.Entities;
+using Domain.Enums;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -139,55 +140,35 @@ namespace Infrastructure.Dishes
                 UpdatedAt = dish.UpdateDate
             };
         }
-        public async Task<IEnumerable<DishResponseDto>> SearchAsync(DishFilterQuery query, CancellationToken ct)
+        public async Task<IEnumerable<DishResponseDto>> SearchAsync(DishFilterQuery q, CancellationToken ct)
         {
-            IQueryable<Dish> q = _db.Dishes.AsNoTracking().Include(d => d.Category);
+            var query = _db.Dishes.AsQueryable();
 
-            // Filtros
-            if (!string.IsNullOrWhiteSpace(query.Name))
-            {
-                var name = query.Name.Trim();
-                q = q.Where(d => d.Name.Contains(name));
-            }
+            if (!string.IsNullOrWhiteSpace(q.Name))
+                query = query.Where(d => d.Name.Contains(q.Name));
 
-            if (query.Category.HasValue)
-                q = q.Where(d => d.CategoryId == query.Category.Value);
+            if (q.Category.HasValue)
+                query = query.Where(d => d.CategoryId == q.Category.Value);
 
-            if (query.OnlyActive)
-                q = q.Where(d => d.Available);
+            if (q.OnlyActive.HasValue)
+                query = q.OnlyActive.Value ? query.Where(d => d.Available) : query;
 
-            // Orden
-            var sort = (query.SortByPrice ?? "asc").Trim().ToLowerInvariant();
-            q = sort == "desc" ? q.OrderByDescending(d => d.Price) : q.OrderBy(d => d.Price);
+            if (q.SortByPrice.HasValue)
+                query = q.SortByPrice == PriceSort.asc
+                    ? query.OrderBy(d => d.Price)
+                    : query.OrderByDescending(d => d.Price);
 
-            // Proyección en dos pasos (mejor para EF cuando hay 'object' anidado)
-            var data = await q
-                .Select(d => new
+            return await query
+                .Select(d => new DishResponseDto
                 {
-                    d.DishId,
-                    d.Name,
-                    d.Description,
-                    d.Price,
-                    d.ImageUrl,
-                    d.Available,
-                    d.CreateDate,
-                    d.UpdateDate,
-                    Category = d.Category == null ? null : new { d.Category.Id, d.Category.Name }
+                    Id = d.DishId,
+                    Name = d.Name,
+                    Description = d.Description,
+                    Price = d.Price,
+                    Category = d.Category
                 })
                 .ToListAsync(ct);
-
-            return data.Select(x => new DishResponseDto
-            {
-                Id = x.DishId,
-                Name = x.Name,
-                Description = x.Description,
-                Price = x.Price,
-                Category = x.Category,            
-                Image = x.ImageUrl,              
-                IsActive = x.Available,          
-                CreatedAt = x.CreateDate,         
-                UpdatedAt = x.UpdateDate          
-            });
         }
+
     }
 }

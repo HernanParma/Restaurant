@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Domain.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,8 +11,8 @@ namespace Application.Dishes.Dtos
     {
         public string? Name { get; set; }
         public int? Category { get; set; }
-        public string? SortByPrice { get; set; } = "asc";
-        public bool OnlyActive { get; set; } = true;
+        public PriceSort? SortByPrice { get; set; }
+        public bool? OnlyActive { get; set; }
     }
 }
 
