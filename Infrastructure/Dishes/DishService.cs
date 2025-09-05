@@ -1,5 +1,6 @@
 ﻿using Application.Dishes;
 using Application.Dishes.Dtos;
+using Application.Queries;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Persistence;
@@ -10,9 +11,11 @@ namespace Infrastructure.Dishes
     public class DishService : IDishService
     {
         private readonly AppDbContext _db;
-        public DishService( AppDbContext db)
+        private readonly IDishQuery _dishQuery;
+        public DishService( AppDbContext db, IDishQuery dishQuery)
         {
             _db = db;
+            _dishQuery = dishQuery;
         }
         public async Task<DishResponseDto> CreateAsync(DishCreateDto dto, CancellationToken ct = default)
         {
@@ -118,28 +121,28 @@ namespace Infrastructure.Dishes
             CreatedAt = d.CreateDate,
             UpdatedAt = d.UpdateDate
         };
-        public async Task<DishResponseDto?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        {
-            var dish = await _db.Dishes
-                .Include(d => d.Category)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(d => d.DishId == id, ct);
+        //public async Task<DishResponseDto?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        //{
+        //    var dish = await _db.Dishes
+        //        .Include(d => d.Category)
+        //        .AsNoTracking()
+        //        .FirstOrDefaultAsync(d => d.DishId == id, ct);
 
-            if (dish is null) return null;
+        //    if (dish is null) return null;
 
-            return new DishResponseDto
-            {
-                Id = dish.DishId,
-                Name = dish.Name,
-                Description = dish.Description,
-                Price = dish.Price,
-                Category = new { id = dish.Category!.Id, name = dish.Category!.Name },
-                Image = dish.ImageUrl,
-                IsActive = dish.Available,
-                CreatedAt = dish.CreateDate,
-                UpdatedAt = dish.UpdateDate
-            };
-        }
+        //    return new DishResponseDto
+        //    {
+        //        Id = dish.DishId,
+        //        Name = dish.Name,
+        //        Description = dish.Description,
+        //        Price = dish.Price,
+        //        Category = new { id = dish.Category!.Id, name = dish.Category!.Name },
+        //        Image = dish.ImageUrl,
+        //        IsActive = dish.Available,
+        //        CreatedAt = dish.CreateDate,
+        //        UpdatedAt = dish.UpdateDate
+        //    };
+        //}
         public async Task<IEnumerable<DishResponseDto>> SearchAsync(DishFilterQuery q, CancellationToken ct)
         {
             var query = _db.Dishes.AsQueryable();
@@ -169,6 +172,5 @@ namespace Infrastructure.Dishes
                 })
                 .ToListAsync(ct);
         }
-
     }
 }

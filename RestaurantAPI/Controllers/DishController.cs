@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Http;
 using Application.Dishes;
 using Application.Dishes.Dtos;
 using Swashbuckle.AspNetCore.Annotations;
+using Application.Queries;
+using Infrastructure.Queries;
 
 namespace RestaurantAPI.Controllers
 {
@@ -12,7 +14,12 @@ namespace RestaurantAPI.Controllers
     public class DishController : ControllerBase
     {
         private readonly IDishService _service;
-        public DishController(IDishService service) => _service = service;
+        private readonly IDishQuery _dishQuery;
+        public DishController(IDishService service, IDishQuery dishQuery)
+        {
+            _service = service;
+            _dishQuery = dishQuery;
+        }
 
         [HttpPost]
         [SwaggerOperation(
@@ -40,8 +47,8 @@ namespace RestaurantAPI.Controllers
        Description =
    @"Obtiene una lista de platos del menú con opciones de filtrado y ordenamiento."
    )]
-        [ProducesResponseType(typeof(IEnumerable<DishResponseDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        //[ProducesResponseType(typeof(IEnumerable<DishResponseDto>), StatusCodes.Status200OK)]
+        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Get([FromQuery] DishFilterQuery query, CancellationToken ct)
         {
             var results = await _service.SearchAsync(query, ct);
@@ -73,7 +80,7 @@ namespace RestaurantAPI.Controllers
         [ApiExplorerSettings(IgnoreApi = true)]
         public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
         {
-            var dish = await _service.GetByIdAsync(id, ct);
+            var dish = await _dishQuery.GetByIdAsync(id, ct);
             return dish is null ? NotFound() : Ok(dish);
         }
     }
