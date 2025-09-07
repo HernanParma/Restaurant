@@ -41,7 +41,6 @@ namespace Infrastructure.Dishes
 
             if (exists)
                 throw new InvalidOperationException("Ya existe un plato con ese nombre");
-
             // 4) Crear entidad
             var entity = new Dish
             {
@@ -55,10 +54,8 @@ namespace Infrastructure.Dishes
                 CreateDate = DateTime.UtcNow,
                 UpdateDate = DateTime.UtcNow
             };
-
             _db.Dishes.Add(entity);
             await _db.SaveChangesAsync(ct);
-
             // 5) Proyección a respuesta
             return new DishResponseDto
             {
@@ -77,11 +74,8 @@ namespace Infrastructure.Dishes
         {
             var dish = await _db.Dishes.FirstOrDefaultAsync(x => x.DishId == id, ct);
             if (dish is null) throw new KeyNotFoundException("El plato no existe.");
-
-            // Validaciones
             if (dto.Price.HasValue && dto.Price.Value <= 0)
                 throw new ArgumentException("El precio debe ser mayor a 0.");
-
             if (!string.IsNullOrWhiteSpace(dto.Name))
             {
                 var duplicate = await _db.Dishes.AnyAsync(
@@ -89,23 +83,19 @@ namespace Infrastructure.Dishes
                 if (duplicate)
                     throw new InvalidOperationException("Ya existe un plato con ese nombre.");
             }
-
             if (dto.CategoryId.HasValue)
             {
                 var catExists = await _db.Categories.AnyAsync(x => x.Id == dto.CategoryId.Value, ct);
                 if (!catExists) throw new KeyNotFoundException("La categoría no existe.");
                 dish.CategoryId = dto.CategoryId.Value;
             }
-
             // Asignaciones (parcial/total)
             if (!string.IsNullOrWhiteSpace(dto.Name)) dish.Name = dto.Name!;
             if (dto.Description is not null) dish.Description = dto.Description;
             if (dto.Price.HasValue) dish.Price = dto.Price.Value;
             if (dto.Image is not null) dish.ImageUrl  = dto.Image;
             if (dto.IsActive.HasValue) dish.Available = dto.IsActive.Value;
-
             dish.UpdateDate = DateTime.UtcNow;
-
             await _db.SaveChangesAsync(ct);
             return Map(dish);
         }
@@ -115,7 +105,7 @@ namespace Infrastructure.Dishes
             Name = d.Name,
             Description = d.Description,
             Price = d.Price,
-            Category = d.Category,     // si preferís un CategoryDto, avisame y lo cambiamos
+            Category = d.Category,     
             Image = d.ImageUrl,
             IsActive = d.Available,
             CreatedAt = d.CreateDate,
@@ -127,9 +117,7 @@ namespace Infrastructure.Dishes
         //        .Include(d => d.Category)
         //        .AsNoTracking()
         //        .FirstOrDefaultAsync(d => d.DishId == id, ct);
-
         //    if (dish is null) return null;
-
         //    return new DishResponseDto
         //    {
         //        Id = dish.DishId,
@@ -146,21 +134,16 @@ namespace Infrastructure.Dishes
         public async Task<IEnumerable<DishResponseDto>> SearchAsync(DishFilterQuery q, CancellationToken ct)
         {
             var query = _db.Dishes.AsQueryable();
-
             if (!string.IsNullOrWhiteSpace(q.Name))
                 query = query.Where(d => d.Name.Contains(q.Name));
-
             if (q.Category.HasValue)
                 query = query.Where(d => d.CategoryId == q.Category.Value);
-
             if (q.OnlyActive.HasValue)
                 query = q.OnlyActive.Value ? query.Where(d => d.Available) : query;
-
             if (q.SortByPrice.HasValue)
                 query = q.SortByPrice == PriceSort.asc
                     ? query.OrderBy(d => d.Price)
                     : query.OrderByDescending(d => d.Price);
-
             return await query
                 .Select(d => new DishResponseDto
                 {

@@ -23,9 +23,7 @@ namespace Infrastructure.Queries
                 .Include(d => d.Category)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(d => d.DishId == id, ct);
-
             if (dish is null) return null;
-
             return new DishResponseDto
             {
                 Id = dish.DishId,
