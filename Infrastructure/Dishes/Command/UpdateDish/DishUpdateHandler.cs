@@ -36,11 +36,11 @@ namespace Infrastructure.Dishes.Command.UpdateDish
                     throw new InvalidOperationException("Ya existe un plato con ese nombre.");
             }
 
-            if (dto.CategoryId.HasValue)
+            if (dto.Category.HasValue)
             {
-                var catExists = await _db.Categories.AnyAsync(x => x.Id == dto.CategoryId.Value, ct);
+                var catExists = await _db.Categories.AnyAsync(x => x.Id == dto.Category.Value, ct);
                 if (!catExists) throw new KeyNotFoundException("La categoría no existe.");
-                dish.CategoryId = dto.CategoryId.Value;
+                dish.CategoryId = dto.Category.Value;
             }
             if (!string.IsNullOrWhiteSpace(dto.Name)) dish.Name = dto.Name!;
             if (dto.Description is not null) dish.Description = dto.Description;
@@ -49,13 +49,15 @@ namespace Infrastructure.Dishes.Command.UpdateDish
             if (dto.IsActive.HasValue) dish.Available = dto.IsActive.Value;
             dish.UpdateDate = DateTime.UtcNow;
             await _db.SaveChangesAsync(ct);
+            await _db.Entry(dish).Reference(d => d.Category).LoadAsync(ct);
+
             return new DishResponseDto
             {
                 Id = dish.DishId,
                 Name = dish.Name,
                 Description = dish.Description,
                 Price = dish.Price,
-                Category = dish.Category,   
+                Category = new CategoryDto { Id = dish.Category!.Id, Name = dish.Category!.Name },   
                 Image = dish.ImageUrl,
                 IsActive = dish.Available,
                 CreatedAt = dish.CreateDate,

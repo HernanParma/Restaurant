@@ -12,7 +12,7 @@ namespace Application.Dishes.Dtos
         public string Name { get; set; } = default!;
         public string? Description { get; set; }
         public decimal Price { get; set; }
-        public object Category { get; set; } = default!; 
+        public CategoryDto Category { get; set; } = default!; 
         public string? Image { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }

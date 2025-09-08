@@ -15,4 +15,3 @@ namespace Application.Dishes.Dtos
         public bool? OnlyActive { get; set; }
     }
 }
-

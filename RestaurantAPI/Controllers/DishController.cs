@@ -28,15 +28,11 @@ namespace RestaurantAPI.Controllers
             _query = query;
         }
 
-        // POST: Commands
         [HttpPost]
         [SwaggerOperation(
             Summary = "Crear nuevo plato",
             Description = "Crea un plato. Reglas: nombre único, precio > 0 y categoría existente."
         )]
-        [ProducesResponseType(typeof(DishResponseDto), StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<ActionResult<DishResponseDto>> Create([FromBody] DishCreateDto dto, CancellationToken ct)
         {
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -50,16 +46,11 @@ namespace RestaurantAPI.Controllers
             catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
         }
 
-        // PUT: Commands
         [HttpPut("{id:guid}")]
         [SwaggerOperation(
             Summary = "Actualizar plato existente",
             Description = "Actualiza los datos del plato indicado. Mantiene las mismas reglas de validación."
         )]
-        [ProducesResponseType(typeof(DishResponseDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<ActionResult<DishResponseDto>> Update(Guid id, [FromBody] DishUpdateDto dto, CancellationToken ct)
         {
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -73,20 +64,17 @@ namespace RestaurantAPI.Controllers
             catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
         }
 
-        // GET (list): Queries
         [HttpGet]
         [SwaggerOperation(
             Summary = "Buscar platos",
             Description = "Obtiene una lista de platos del menú con opciones de filtrado y ordenamiento."
         )]
-        [ProducesResponseType(typeof(IEnumerable<DishResponseDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<DishResponseDto>>> Get([FromQuery] DishFilterQuery filter, CancellationToken ct)
         {
             var results = await _query.SearchAsync(filter, ct);
             return Ok(results);
         }
 
-        // GET (by id): Queries — oculto en Swagger pero ENTRA en routing
         [HttpGet("{id:guid}", Name = "GetDishById")]
         [ApiExplorerSettings(IgnoreApi = true)]
         public async Task<ActionResult<DishResponseDto>> GetById(Guid id, CancellationToken ct)

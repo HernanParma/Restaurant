@@ -28,7 +28,7 @@ namespace Infrastructure.Dishes.Command
                     throw new ArgumentException("El nombre es obligatorio");
                 var category = await _db.Categories
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == dto.CategoryId, ct);
+                    .FirstOrDefaultAsync(c => c.Id == dto.Category, ct);
                 if (category is null)
                     throw new KeyNotFoundException("La categoría no existe");
                 var exists = await _db.Dishes
@@ -41,7 +41,7 @@ namespace Infrastructure.Dishes.Command
                     Name = nameNormalized,
                     Description = dto.Description?.Trim() ?? string.Empty,
                     Price = dto.Price,
-                    CategoryId = dto.CategoryId,
+                    CategoryId = dto.Category,
                     ImageUrl = dto.Image?.Trim(),
                     Available = true,
                     CreateDate = DateTime.UtcNow,
@@ -55,7 +55,7 @@ namespace Infrastructure.Dishes.Command
                     Name = entity.Name,
                     Description = entity.Description,
                     Price = entity.Price,
-                    Category = new { id = category.Id, name = category.Name },
+                    Category = new CategoryDto { Id = category.Id, Name = category.Name },
                     Image = entity.ImageUrl,
                     IsActive = entity.Available,
                     CreatedAt = entity.CreateDate,
