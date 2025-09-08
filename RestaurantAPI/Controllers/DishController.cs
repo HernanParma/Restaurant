@@ -20,7 +20,8 @@ namespace RestaurantAPI.Controllers
             _service = service;
             _dishQuery = dishQuery;
         }
-
+       
+        
         [HttpPost]
         [SwaggerOperation(
             Summary = "Crear nuevo plato",
@@ -40,13 +41,14 @@ namespace RestaurantAPI.Controllers
             catch (KeyNotFoundException ex) { return BadRequest(new { message = ex.Message }); }
             catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
         }
-
+       
+        
         [HttpGet]
         [SwaggerOperation(
-       Summary = "Buscar platos",
-       Description =
-   @"Obtiene una lista de platos del menú con opciones de filtrado y ordenamiento."
-   )]
+        Summary = "Buscar platos",
+        Description =
+        @"Obtiene una lista de platos del menú con opciones de filtrado y ordenamiento."
+        )]
         //[ProducesResponseType(typeof(IEnumerable<DishResponseDto>), StatusCodes.Status200OK)]
         //[ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Get([FromQuery] DishFilterQuery query, CancellationToken ct)
@@ -54,16 +56,13 @@ namespace RestaurantAPI.Controllers
             var results = await _service.SearchAsync(query, ct);
             return Ok(results);
         }
-
-
-
-        // PUT /api/v1/Dish/{id}  -> Actualizar plato existente
+       
+        
         [HttpPut("{id:guid}")]
         [SwaggerOperation(
             Summary = "Actualizar plato existente",
             Description = "Actualiza los datos del plato indicado. Mantiene las mismas reglas de validación."
         )]
-        
         public async Task<IActionResult> Update(Guid id, [FromBody] DishUpdateDto dto, CancellationToken ct)
         {
             try
@@ -75,7 +74,8 @@ namespace RestaurantAPI.Controllers
             catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
             catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
         }
-        // (oculto en la UI principal, pero necesario para CreatedAtAction del POST)
+       
+        
         [HttpGet("{id:guid}")]
         [ApiExplorerSettings(IgnoreApi = true)]
         public async Task<IActionResult> GetById(Guid id, CancellationToken ct)

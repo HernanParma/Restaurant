@@ -10,9 +10,7 @@ namespace Application.Dishes
     public interface IDishService
     {
         Task<DishResponseDto> CreateAsync(DishCreateDto dto, CancellationToken ct = default);
-        //Task<DishResponseDto?> GetByIdAsync(Guid id, CancellationToken ct = default);
         Task<IEnumerable<DishResponseDto>> SearchAsync(DishFilterQuery query, CancellationToken ct);
         Task<DishResponseDto> UpdateAsync(Guid id, DishUpdateDto dto, CancellationToken ct); // <-- nuevo
-
     }
 }

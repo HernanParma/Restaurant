@@ -10,6 +10,6 @@ namespace Application.Queries
     public interface IDishQuery
     {
         Task<DishResponseDto?> GetByIdAsync(Guid id, CancellationToken ct = default);
-
+        Task<IReadOnlyList<DishResponseDto>> SearchAsync(DishFilterQuery q, CancellationToken ct = default);
     }
 }

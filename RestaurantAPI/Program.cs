@@ -1,6 +1,10 @@
 using Application.Dishes;
+using Application.Dishes.Command.CreateDish;
+using Application.Dishes.Command.UpdateDish;
 using Application.Queries;
 using Infrastructure.Dishes;
+using Infrastructure.Dishes.Command;
+using Infrastructure.Dishes.Command.UpdateDish;
 using Infrastructure.Persistence;
 using Infrastructure.Queries;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +25,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddScoped<IDishService, DishService>();
 builder.Services.AddSwaggerGen(c =>
 {
-    // <-- acá defines el documento "v1"
     c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "RestaurantAPI",
@@ -31,24 +34,21 @@ builder.Services.AddSwaggerGen(c =>
 
 // custom (Inyecciones de dependencias)
 builder.Services.AddScoped<IDishService, DishService>();
+builder.Services.AddScoped<ICreateDishHandler, CreateDishHandler>();
+builder.Services.AddScoped<IDishUpdateHandler, DishUpdateHandler>();
 builder.Services.AddScoped<IDishQuery, DishQuery>();
 var connectionString = builder.Configuration["ConnectionString"];
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
-
+builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString));
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        // <-- y acá le decís a la UI dónde está el JSON
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "RestaurantAPI v1");
     });
 }
-
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
