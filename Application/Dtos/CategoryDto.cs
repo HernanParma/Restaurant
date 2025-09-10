@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Dishes.Dtos
+namespace Application.Dtos
 {
     public class CategoryDto
     {

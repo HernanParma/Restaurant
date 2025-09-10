@@ -1,10 +1,6 @@
-using Application.Dishes;
-using Application.Dishes.Command.CreateDish;
-using Application.Dishes.Command.UpdateDish;
-using Application.Queries;
-using Infrastructure.Dishes;
-using Infrastructure.Dishes.Command;
-using Infrastructure.Dishes.Command.UpdateDish;
+using Application.Interfaces;
+using Application.Services;
+using Infrastructure.Commands;
 using Infrastructure.Persistence;
 using Infrastructure.Queries;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +16,7 @@ builder.Services.AddControllers()
         o.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddScoped<IDishService, DishService>();
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -31,9 +27,10 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // custom (Inyecciones de dependencias)
-builder.Services.AddScoped<IDishService, DishService>();
-builder.Services.AddScoped<ICreateDishHandler, CreateDishHandler>();
-builder.Services.AddScoped<IDishUpdateHandler, DishUpdateHandler>();
+builder.Services.AddScoped<ICreateDishService, CreateDishService>();
+builder.Services.AddScoped<IUpdateDishService, UpdateDishService>();
+builder.Services.AddScoped<IGetAllDishesService, GetAllDishesService>();
+builder.Services.AddScoped<IDishCommand, DishCommand>();
 builder.Services.AddScoped<IDishQuery, DishQuery>();
 
 var connectionString = builder.Configuration["ConnectionString"];

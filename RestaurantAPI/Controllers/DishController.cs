@@ -1,11 +1,8 @@
-﻿using Application.Dishes.Command.CreateDish;
-using Application.Dishes.Command.CreateDish;
-using Application.Dishes.Command.UpdateDish;
-using Application.Dishes.Dtos;
+﻿using Application.Dtos;
+using Application.Interfaces;
 using Application.Queries;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
-using static Application.Dishes.Command.UpdateDish.DishUpdateCommand;
 
 namespace RestaurantAPI.Controllers
 {
@@ -14,17 +11,20 @@ namespace RestaurantAPI.Controllers
     [Produces("application/json")]
     public class DishController : ControllerBase
     {
-        private readonly ICreateDishHandler _create;
-        private readonly IDishUpdateHandler _update;
+        private readonly ICreateDishService _createService;
+        private readonly IUpdateDishService _updateService;
+        private readonly IGetAllDishesService _readService;
         private readonly IDishQuery _query;
 
         public DishController(
-            ICreateDishHandler create,
-            IDishUpdateHandler update,
+            ICreateDishService createService,
+            IUpdateDishService updateService,
+            IGetAllDishesService readService,
             IDishQuery query)
         {
-            _create = create;
-            _update = update;
+            _createService = createService;
+            _updateService = updateService;
+            _readService = readService;
             _query = query;
         }
 
@@ -36,9 +36,10 @@ namespace RestaurantAPI.Controllers
         public async Task<ActionResult<DishResponseDto>> Create([FromBody] DishCreateDto dto, CancellationToken ct)
         {
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
+
             try
             {
-                var created = await _create.HandleAsync(new CreateDishCommand(dto), ct);
+                var created = await _createService.CreateAsync(dto, ct);
                 return CreatedAtRoute("GetDishById", new { id = created.Id }, created);
             }
             catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
@@ -49,14 +50,15 @@ namespace RestaurantAPI.Controllers
         [HttpPut("{id:guid}")]
         [SwaggerOperation(
             Summary = "Actualizar plato existente",
-            Description = "Actualiza los datos del plato indicado. Mantiene las mismas reglas de validación."
+            Description = "Actualiza los datos del plato indicado. Valida nombre único (solo si cambia), precio > 0 y categoría existente."
         )]
         public async Task<ActionResult<DishResponseDto>> Update(Guid id, [FromBody] DishUpdateDto dto, CancellationToken ct)
         {
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
+
             try
             {
-                var updated = await _update.HandleAsync(new UpdateDishCommand(id, dto), ct);
+                var updated = await _updateService.UpdateAsync(id, dto, ct);
                 return Ok(updated);
             }
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
@@ -67,20 +69,33 @@ namespace RestaurantAPI.Controllers
         [HttpGet]
         [SwaggerOperation(
             Summary = "Buscar platos",
-            Description = "Obtiene una lista de platos del menú con opciones de filtrado y ordenamiento."
+            Description = "Si no enviás filtros, devuelve todo. Podés filtrar por nombre, categoría, solo activos y ordenar por precio."
         )]
         public async Task<ActionResult<IEnumerable<DishResponseDto>>> Get([FromQuery] DishFilterQuery filter, CancellationToken ct)
         {
-            var results = await _query.SearchAsync(filter, ct);
+            bool hasFilters =
+                !string.IsNullOrWhiteSpace(filter?.Name) ||
+                filter?.Category.HasValue == true ||
+                filter?.SortByPrice.HasValue == true ||
+                filter?.OnlyActive.HasValue == true;
+
+            var results = hasFilters
+                ? await _readService.SearchAsync(filter!, ct)
+                : await _readService.GetAllAsync(ct);
+
             return Ok(results);
         }
 
-        [HttpGet("{id:guid}", Name = "GetDishById")]
-        [ApiExplorerSettings(IgnoreApi = true)]
-        public async Task<ActionResult<DishResponseDto>> GetById(Guid id, CancellationToken ct)
-        {
-            var dish = await _query.GetByIdAsync(id, ct);
-            return dish is null ? NotFound() : Ok(dish);
-        }
+        //[HttpGet("{id:guid}", Name = "GetDishById")]
+        //[SwaggerOperation(
+        //    Summary = "Obtener plato por Id",
+        //    Description = "Devuelve el plato con su categoría si existe."
+        //)]
+        //public async Task<ActionResult<DishResponseDto>> GetById(Guid id, CancellationToken ct)
+        //{
+        //    // Requiere que IDishQuery exponga GetByIdAsync
+        //    var dish = await _query.GetByIdAsync(id, ct);
+        //    return dish is null ? NotFound() : Ok(dish);
+        //}
     }
 }
