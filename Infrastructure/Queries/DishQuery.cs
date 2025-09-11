@@ -1,6 +1,7 @@
 ﻿using Application.Dtos;
 using Application.Interfaces;
 using Application.Mappers;
+using Application.Queries;
 using Domain.Enums; 
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;

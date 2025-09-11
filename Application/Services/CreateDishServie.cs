@@ -7,7 +7,6 @@ namespace Application.Services
     {
         private readonly IDishCommand _command;
         public CreateDishService(IDishCommand command) => _command = command;
-
         public Task<DishResponseDto> CreateAsync(DishCreateDto dto, CancellationToken ct = default)
             => _command.CreateAsync(dto, ct);
     }

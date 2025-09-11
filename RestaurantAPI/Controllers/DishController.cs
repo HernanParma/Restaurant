@@ -85,17 +85,16 @@ namespace RestaurantAPI.Controllers
 
             return Ok(results);
         }
-
-        //[HttpGet("{id:guid}", Name = "GetDishById")]
-        //[SwaggerOperation(
-        //    Summary = "Obtener plato por Id",
-        //    Description = "Devuelve el plato con su categoría si existe."
-        //)]
-        //public async Task<ActionResult<DishResponseDto>> GetById(Guid id, CancellationToken ct)
-        //{
-        //    // Requiere que IDishQuery exponga GetByIdAsync
-        //    var dish = await _query.GetByIdAsync(id, ct);
-        //    return dish is null ? NotFound() : Ok(dish);
-        //}
+        [HttpGet("{id:guid}", Name = "GetDishById")]
+        [ApiExplorerSettings(IgnoreApi = true)]//aca oculq¿te este endpoint que uso para la creacion
+        [SwaggerOperation(
+            Summary = "Obtener plato por Id",
+            Description = "Devuelve el plato con su categoría si existe."
+        )]
+        public async Task<ActionResult<DishResponseDto>> GetById(Guid id, CancellationToken ct)
+        {
+            var dish = await _query.GetByIdAsync(id, ct);
+            return dish is null ? NotFound() : Ok(dish);
+        }
     }
 }
