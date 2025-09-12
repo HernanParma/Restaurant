@@ -96,5 +96,6 @@ namespace RestaurantAPI.Controllers
             var dish = await _query.GetByIdAsync(id, ct);
             return dish is null ? NotFound() : Ok(dish);
         }
+
     }
 }

@@ -1,0 +1,17 @@
+﻿using Application.Dtos;
+using Application.Interfaces;
+using Microsoft.AspNetCore.Mvc;
+
+namespace RestaurantAPI.Controllers;
+
+[ApiController]
+[Route("api/v1/[controller]")] 
+public class CategoryController : ControllerBase
+{
+    private readonly ICategoryQuery _query;
+    public CategoryController(ICategoryQuery query) => _query = query;
+
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<CategoryDto>>> GetAll(CancellationToken ct) =>
+        Ok(await _query.GetAllAsync(ct));
+}

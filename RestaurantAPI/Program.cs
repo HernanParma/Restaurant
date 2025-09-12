@@ -30,6 +30,9 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // custom
+builder.Services.AddScoped<ICategoryQuery, CategoryQuery>();
+builder.Services.AddScoped<IDeliveryTypeQuery, DeliveryTypeQuery>();
+builder.Services.AddScoped<IStatusQuery, StatusQuery>();
 builder.Services.AddScoped<ICreateDishService, CreateDishService>();
 builder.Services.AddScoped<IUpdateDishService, UpdateDishService  > ();
 builder.Services.AddScoped<IGetAllDishesService, GetAllDishesService>();
