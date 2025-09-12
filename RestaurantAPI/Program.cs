@@ -1,9 +1,11 @@
 using Application.Interfaces;
 using Application.Services;
+using Domain.Enums;
 using Infrastructure.Commands;
 using Infrastructure.Persistence;
 using Infrastructure.Queries;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,6 +25,15 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "RestaurantAPI",
         Version = "v1"
+    });
+    c.MapType<PriceSort>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Enum = new List<IOpenApiAny>
+        {
+            new OpenApiString("asc"),
+            new OpenApiString("desc")
+        }
     });
 });
 
