@@ -75,10 +75,10 @@ namespace Infrastructure.Persistence
                 entity.ToTable("Dish");
                 entity.HasKey(d => d.DishId);
                 entity.Property(d => d.Name).IsRequired().HasMaxLength(255);
-                entity.Property(d => d.Description);
+                entity.Property(d => d.Description).IsRequired(false); ;
                 entity.Property(d => d.Price).HasColumnType("decimal(18,2)");
                 entity.Property(d => d.Available).IsRequired();
-                entity.Property(d => d.ImageUrl);
+                entity.Property(d => d.ImageUrl).IsRequired(false); ;
                 entity.Property(d => d.CreateDate).IsRequired();
                 entity.Property(d => d.UpdateDate);
 

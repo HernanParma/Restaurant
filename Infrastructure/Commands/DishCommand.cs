@@ -32,7 +32,7 @@ namespace Infrastructure.Commands
                 Price = dto.Price,
                 CategoryId = dto.Category,
                 ImageUrl = dto.Image,
-                Available = true,
+                Available = dto.IsActive,
                 CreateDate = DateTime.UtcNow,
                 UpdateDate = DateTime.UtcNow
             };

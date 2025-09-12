@@ -86,7 +86,7 @@ namespace RestaurantAPI.Controllers
             return Ok(results);
         }
         [HttpGet("{id:guid}", Name = "GetDishById")]
-        [ApiExplorerSettings(IgnoreApi = true)]//aca oculq¿te este endpoint que uso para la creacion
+        [ApiExplorerSettings(IgnoreApi = true)]//aca oculq¿te este get que uso para la creacion
         [SwaggerOperation(
             Summary = "Obtener plato por Id",
             Description = "Devuelve el plato con su categoría si existe."
