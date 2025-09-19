@@ -10,5 +10,7 @@ namespace Application.Interfaces
     public interface IDeliveryTypeQuery
     {
         Task<IReadOnlyList<DeliveryTypeDto>> GetAllAsync(CancellationToken ct);
+        Task<bool> ExistsAsync(int deliveryTypeId, CancellationToken ct = default);
+
     }
 }

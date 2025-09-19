@@ -10,6 +10,7 @@ namespace Application.Interfaces
     public interface IStatusQuery
     {
         Task<IReadOnlyList<StatusDto>> GetAllAsync(CancellationToken ct);
+        Task<bool> ExistsAsync(int statusId, CancellationToken ct = default);
     }
 
 }

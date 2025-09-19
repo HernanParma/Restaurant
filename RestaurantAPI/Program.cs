@@ -1,4 +1,5 @@
 using Application.Interfaces;
+using Application.Queries;
 using Application.Services;
 using Domain.Enums;
 using Infrastructure.Commands;
@@ -53,9 +54,15 @@ builder.Services.AddScoped<IDishCommand, DishCommand>();
 builder.Services.AddScoped<IDishQuery, DishQuery>();
 builder.Services.AddTransient<ApiExceptionMiddleware>();
 builder.Services.AddScoped<IDeleteDishService, DeleteDishService>();
-
+builder.Services.AddScoped<ICreateOrderService, CreateOrderService>();
+builder.Services.AddScoped<IOrderCommand, OrderCommand>(); 
+builder.Services.AddScoped<IGetOrdersService, GetOrdersService>();
+builder.Services.AddScoped<IOrderQuery, OrderQuery>();
+builder.Services.AddScoped<IUpdateOrderService, UpdateOrderService>();
+builder.Services.AddScoped<IGetOrderByIdService, GetOrderByIdService>();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString));
+builder.Services.AddScoped<IUpdateOrderItemStatusService, UpdateOrderItemStatusService>();
 
 var app = builder.Build();
 app.UseMiddleware<ApiExceptionMiddleware>();

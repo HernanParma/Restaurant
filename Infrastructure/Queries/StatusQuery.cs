@@ -15,5 +15,7 @@ namespace Infrastructure.Queries
          .OrderBy(x => x.Id)
          .Select(x => new StatusDto { Id = x.Id, Name = x.Name })
          .ToListAsync(ct);
+        public Task<bool> ExistsAsync(int statusId, CancellationToken ct = default)
+           => _db.Statuses.AsNoTracking().AnyAsync(s => s.Id == statusId, ct);
     }
 }

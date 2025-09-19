@@ -15,5 +15,7 @@ namespace Infrastructure.Queries
                 .OrderBy(x => x.Id)
                 .Select(x => new DeliveryTypeDto { Id = x.Id, Name = x.Name })
                 .ToListAsync(ct);
+        public Task<bool> ExistsAsync(int deliveryTypeId, CancellationToken ct = default)
+            => _db.DeliveryTypes.AsNoTracking().AnyAsync(d => d.Id == deliveryTypeId, ct);
     }
 }

@@ -5,6 +5,7 @@ using Application.Queries;
 using Domain.Enums; 
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using static Application.Interfaces.IDishQuery;
 
 namespace Infrastructure.Queries
 {
@@ -70,6 +71,20 @@ namespace Infrastructure.Queries
                 .AsNoTracking()
                 .Where(o => activeStatusIds.Contains(o.OverallStatusId))
                 .AnyAsync(o => o.Items.Any(i => i.DishId == dishId), ct);
+        }
+        public async Task<IReadOnlyList<DishBasicInfo>> GetBasicByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+        {
+            var set = ids.ToHashSet();
+            return await _db.Dishes
+                .AsNoTracking()
+                .Where(d => set.Contains(d.DishId))
+                .Select(d => new DishBasicInfo
+                {
+                    Id = d.DishId,
+                    Price = d.Price,
+                    IsActive = d.Available
+                })
+                .ToListAsync(ct);
         }
     }
 }
