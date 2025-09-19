@@ -15,5 +15,7 @@ namespace Infrastructure.Queries
                 .OrderBy(c => c.Id)
                 .Select(c => new CategoryDto { Id = c.Id, Name = c.Name, Description = c.Description, Order = c.Order })
                 .ToListAsync(ct);
+        public Task<bool> ExistsAsync(int categoryId, CancellationToken ct = default)
+            => _db.Categories.AsNoTracking().AnyAsync(c => c.Id == categoryId, ct);
     }
 }

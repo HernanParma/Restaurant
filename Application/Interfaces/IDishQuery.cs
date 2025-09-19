@@ -8,6 +8,8 @@ namespace Application.Interfaces
         Task<IEnumerable<DishResponseDto>> GetAllAsync(CancellationToken ct = default);
         Task<IEnumerable<DishResponseDto>> SearchAsync(DishFilterQuery query, CancellationToken ct = default);
         Task<DishResponseDto?> GetByIdAsync(Guid id, CancellationToken ct = default);
+        Task<bool> ExistsByNameAsync(string name, CancellationToken ct = default);
+        Task<bool> IsInActiveOrdersAsync(Guid dishId, CancellationToken ct = default);
 
     }
 }

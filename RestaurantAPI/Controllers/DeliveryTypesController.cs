@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace RestaurantAPI.Controllers;
 
 [ApiController]
-[Route("api/v1/deliverytypes")] 
+[Route("api/v1/deliverytypes")]
+[ApiExplorerSettings(GroupName = "Dish")]
 public class DeliveryTypesController : ControllerBase
 {
     private readonly IDeliveryTypeQuery _query;

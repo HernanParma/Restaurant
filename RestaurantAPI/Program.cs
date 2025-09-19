@@ -7,6 +7,7 @@ using Infrastructure.Queries;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
+using RestaurantAPI.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers()
@@ -19,9 +20,21 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.EnableAnnotations();
+
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "RestaurantAPI", Version = "v1" });
 
-    // no mostrar pricesort en schemas
+    c.TagActionsBy(api =>
+    {
+        var g = api.GroupName;
+        if (!string.IsNullOrWhiteSpace(g)) return new[] { g };
+
+        var hasCtrl = api.ActionDescriptor.RouteValues.TryGetValue("controller", out var ctrl);
+        return new[] { hasCtrl ? ctrl! : "Default" };
+
+    });
+    c.DocInclusionPredicate((docName, apiDesc) => true);
+
+    // Mapear enum PriceSort como string con valores “asc/desc”
     c.MapType<PriceSort>(() => new OpenApiSchema
     {
         Type = "string",
@@ -38,12 +51,14 @@ builder.Services.AddScoped<IUpdateDishService, UpdateDishService  > ();
 builder.Services.AddScoped<IGetAllDishesService, GetAllDishesService>();
 builder.Services.AddScoped<IDishCommand, DishCommand>();
 builder.Services.AddScoped<IDishQuery, DishQuery>();
+builder.Services.AddTransient<ApiExceptionMiddleware>();
+builder.Services.AddScoped<IDeleteDishService, DeleteDishService>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString));
 
 var app = builder.Build();
-
+app.UseMiddleware<ApiExceptionMiddleware>();
 // esto Aplica migraciones automáticamente al iniciar 
 using (var scope = app.Services.CreateScope())
 {

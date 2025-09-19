@@ -59,6 +59,17 @@ namespace Infrastructure.Queries
                  .Where(x => x.DishId == id)
                  .Select(DishMapper.ToDtoProjection())   // el mapper que me pidio
                  .FirstOrDefaultAsync(ct);
-        }      
+        }
+        public Task<bool> ExistsByNameAsync(string name, CancellationToken ct = default)
+            => _db.Dishes.AsNoTracking().AnyAsync(d => d.Name == name, ct);
+        public async Task<bool> IsInActiveOrdersAsync(Guid dishId, CancellationToken ct = default)
+        {
+            var activeStatusIds = new[] { 1, 2 };
+
+            return await _db.Orders
+                .AsNoTracking()
+                .Where(o => activeStatusIds.Contains(o.OverallStatusId))
+                .AnyAsync(o => o.Items.Any(i => i.DishId == dishId), ct);
+        }
     }
 }

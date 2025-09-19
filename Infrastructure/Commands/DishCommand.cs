@@ -1,91 +1,110 @@
-﻿using Application.Dtos;
+﻿using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Application.Dtos;
 using Application.Interfaces;
 using Domain.Entities;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Application.Mappers;
 
 namespace Infrastructure.Commands
 {
-    public class DishCommand : IDishCommand
+    public sealed class DishCommand : IDishCommand
     {
         private readonly AppDbContext _db;
+
         public DishCommand(AppDbContext db) => _db = db;
 
-        public async Task<DishResponseDto> CreateAsync(DishCreateDto dto, CancellationToken ct = default)
+        public async Task<DishResponseDto> CreateAsync(DishCreateDto dto, CancellationToken ct)
         {
-            if (dto.Price <= 0) throw new ArgumentException("El precio debe ser mayor a 0.");
-            var name = dto.Name?.Trim();
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("El nombre es obligatorio.");
-
-            var catExists = await _db.Categories.AnyAsync(c => c.Id == dto.Category, ct);
-            if (!catExists) throw new KeyNotFoundException("La categoría no existe.");
-
-            var duplicate = await _db.Dishes.AnyAsync(d => d.Name == name, ct);
-            if (duplicate) throw new InvalidOperationException("Ya existe un plato con ese nombre.");
-
             var entity = new Dish
             {
                 DishId = Guid.NewGuid(),
-                Name = name!,
+                Name = dto.Name,
                 Description = dto.Description,
                 Price = dto.Price,
                 CategoryId = dto.Category,
-                ImageUrl = dto.Image,
-                Available = dto.IsActive,
-                CreateDate = DateTime.UtcNow,
-                UpdateDate = DateTime.UtcNow
+                Available = dto.IsActive
             };
-            await _db.Dishes.AddAsync(entity, ct);
+
+            _db.Dishes.Add(entity);
             await _db.SaveChangesAsync(ct);
-            return await _db.Dishes
-            .AsNoTracking()
-            .Where(d => d.DishId == entity.DishId)
-            .Select(DishMapper.ToDtoProjection())
-            .FirstAsync(ct);
-        }
-        public async Task<DishResponseDto> UpdateAsync(Guid id, DishUpdateDto dto, CancellationToken ct = default)
-        {
-            var dish = await _db.Dishes.FirstOrDefaultAsync(x => x.DishId == id, ct);
-            if (dish is null) throw new KeyNotFoundException("El plato no existe.");
 
-            if (dto.Price.HasValue && dto.Price.Value <= 0)
-                throw new ArgumentException("El precio debe ser mayor a 0.");
-
-            if (!string.IsNullOrWhiteSpace(dto.Name))
+            return new DishResponseDto
             {
-                var newName = dto.Name.Trim();
-                var isNameChanging = !newName.Equals(dish.Name, StringComparison.OrdinalIgnoreCase);
-
-                if (isNameChanging)
+                Id = entity.DishId,
+                Name = entity.Name,
+                Description = entity.Description,
+                Price = entity.Price,
+                Category = new CategoryDto   
                 {
-                    var duplicate = await _db.Dishes.AnyAsync(
-                        x => x.DishId != id && x.Name == newName, ct);
+                    Id = entity.CategoryId,
+                    Name = entity.Category?.Name ?? string.Empty,
+                    Description = entity.Category?.Description,
+                    Order = entity.Category?.Order ?? 0
+                },
+                IsActive = entity.Available
+            };
+        }
+        public async Task<DishResponseDto> UpdateAsync(Guid id, DishUpdateDto dto, CancellationToken ct)
+        {
+            var entity = await _db.Dishes.FirstOrDefaultAsync(d => d.DishId == id, ct);
+            if (entity is null)
+                throw new KeyNotFoundException("Dish no encontrado."); 
 
-                    if (duplicate)
-                        throw new InvalidOperationException("Ya existe un plato con ese nombre.");
+            entity.Name = dto.Name;
+            entity.Description = dto.Description;
+            entity.Price = dto.Price;
+            entity.CategoryId = dto.Category;
+            entity.Available = dto.IsActive;
+            entity.UpdateDate = DateTime.UtcNow;
 
-                    dish.Name = newName;
-                }
-            }
-            if (dto.Category.HasValue)
-            {
-                var catExists = await _db.Categories.AnyAsync(x => x.Id == dto.Category.Value, ct);
-                if (!catExists) throw new KeyNotFoundException("La categoría no existe.");
-                dish.CategoryId = dto.Category.Value;
-            }
-            if (dto.Description is not null) dish.Description = dto.Description;
-            if (dto.Price.HasValue) dish.Price = dto.Price.Value;
-            if (dto.Image is not null) dish.ImageUrl = dto.Image;
-            if (dto.IsActive.HasValue) dish.Available = dto.IsActive.Value;
-
-            dish.UpdateDate = DateTime.UtcNow;
             await _db.SaveChangesAsync(ct);
-            return await _db.Dishes
-            .AsNoTracking()
-            .Where(d => d.DishId == dish.DishId)
-            .Select(DishMapper.ToDtoProjection())
-            .FirstAsync(ct);
+
+            var cat = await _db.Categories.AsNoTracking()
+                .Where(c => c.Id == entity.CategoryId)
+                .Select(c => new CategoryDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Description = c.Description,
+                    Order = c.Order
+                })
+                .FirstOrDefaultAsync(ct);
+
+            return new DishResponseDto
+            {
+                Id = entity.DishId,
+                Name = entity.Name,
+                Description = entity.Description,
+                Price = entity.Price,
+                Category = cat ?? new CategoryDto { Id = entity.CategoryId, Name = string.Empty, Description = null, Order = 0 },
+                IsActive = entity.Available,
+                CreatedAt = entity.CreateDate,
+                UpdatedAt = entity.UpdateDate
+            };
+        }
+        public async Task<DishResponseDto> DeleteAsync(Guid id, CancellationToken ct = default)
+        {
+            var entity = await _db.Dishes.FirstOrDefaultAsync(d => d.DishId == id, ct);
+            if (entity is null)
+                throw new KeyNotFoundException("Plato no encontrado");
+
+            _db.Dishes.Remove(entity);
+            await _db.SaveChangesAsync(ct);
+            return new DishResponseDto
+            {
+                Id = entity.DishId,
+                Name = entity.Name,
+                Description = entity.Description,
+                Price = entity.Price,
+                Category = new CategoryDto { Id = entity.CategoryId },
+                IsActive = entity.Available,
+                CreatedAt = entity.CreateDate,
+                UpdatedAt = entity.UpdateDate
+            };
         }
     }
+
 }

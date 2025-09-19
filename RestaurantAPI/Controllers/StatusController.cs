@@ -6,6 +6,7 @@ namespace RestaurantAPI.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
+[ApiExplorerSettings(GroupName = "Dish")]
 public class StatusController : ControllerBase
 {
     private readonly IStatusQuery _query;

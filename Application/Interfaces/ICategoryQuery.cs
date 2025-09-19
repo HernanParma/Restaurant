@@ -10,5 +10,7 @@ namespace Application.Interfaces
     public interface ICategoryQuery
     {
         Task<IReadOnlyList<CategoryDto>> GetAllAsync(CancellationToken ct);
+        Task<bool> ExistsAsync(int categoryId, CancellationToken ct = default);
+
     }
 }

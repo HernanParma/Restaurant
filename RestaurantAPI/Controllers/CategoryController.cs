@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace RestaurantAPI.Controllers;
 
 [ApiController]
-[Route("api/v1/[controller]")] 
+[Route("api/v1/[controller]")]
+[ApiExplorerSettings(GroupName = "Dish")]
 public class CategoryController : ControllerBase
 {
     private readonly ICategoryQuery _query;
