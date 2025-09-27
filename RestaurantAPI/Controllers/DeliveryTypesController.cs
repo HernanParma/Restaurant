@@ -1,6 +1,7 @@
 ﻿using Application.Dtos;
 using Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace RestaurantAPI.Controllers;
 
@@ -13,6 +14,7 @@ public class DeliveryTypesController : ControllerBase
     public DeliveryTypesController(IDeliveryTypeQuery query) => _query = query;
 
     [HttpGet]
+    [SwaggerOperation(Summary = "Obtener tipos de entrega")]
     public async Task<ActionResult<IReadOnlyList<DeliveryTypeDto>>> GetAll(CancellationToken ct) =>
         Ok(await _query.GetAllAsync(ct));
 }

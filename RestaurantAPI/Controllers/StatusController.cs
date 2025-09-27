@@ -1,6 +1,7 @@
 ﻿using Application.Dtos;
 using Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace RestaurantAPI.Controllers;
 
@@ -13,6 +14,7 @@ public class StatusController : ControllerBase
     public StatusController(IStatusQuery query) => _query = query;
 
     [HttpGet]
+    [SwaggerOperation(Summary = "Obtener estados de órdenes")]
     public async Task<ActionResult<IReadOnlyList<StatusDto>>> GetAll(CancellationToken ct) =>
         Ok(await _query.GetAllAsync(ct));
 }

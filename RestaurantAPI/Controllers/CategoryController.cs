@@ -1,6 +1,7 @@
 ﻿using Application.Dtos;
 using Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace RestaurantAPI.Controllers;
 
@@ -13,6 +14,7 @@ public class CategoryController : ControllerBase
     public CategoryController(ICategoryQuery query) => _query = query;
 
     [HttpGet]
+    [SwaggerOperation(Summary = "Obtener categorias de platos")]
     public async Task<ActionResult<IReadOnlyList<CategoryDto>>> GetAll(CancellationToken ct) =>
         Ok(await _query.GetAllAsync(ct));
 }

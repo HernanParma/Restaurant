@@ -21,7 +21,6 @@ namespace RestaurantAPI.Controllers
         private readonly IGetAllDishesService _readService;
         private readonly IDishQuery _query;
         private readonly IDeleteDishService _deleteService;
-
         public DishController(
             ICreateDishService createService,
             IUpdateDishService updateService,
@@ -41,7 +40,6 @@ namespace RestaurantAPI.Controllers
         [ProducesResponseType(typeof(DishResponseDto), StatusCodes.Status201Created)]
         public async Task<ActionResult<DishResponseDto>> Create([FromBody] DishCreateDto dto, CancellationToken ct)
         {
-            // [ApiController] ya validó el DTO (DataAnnotations/FluentValidation)
             var created = await _createService.CreateAsync(dto, ct);
             return CreatedAtRoute("GetDishById", new { id = created.Id }, created);
         }

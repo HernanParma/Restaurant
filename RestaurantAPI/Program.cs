@@ -60,29 +60,48 @@ builder.Services.AddScoped<IGetOrdersService, GetOrdersService>();
 builder.Services.AddScoped<IOrderQuery, OrderQuery>();
 builder.Services.AddScoped<IUpdateOrderService, UpdateOrderService>();
 builder.Services.AddScoped<IGetOrderByIdService, GetOrderByIdService>();
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddScoped<IUpdateOrderItemStatusService, UpdateOrderItemStatusService>();
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// En Testing no registro SqlServer (lo inyecta el CustomWebAppFactory)
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseSqlServer(connectionString));
+}
 
 var app = builder.Build();
 app.UseMiddleware<ApiExceptionMiddleware>();
-// esto Aplica migraciones automáticamente al iniciar 
-using (var scope = app.Services.CreateScope())
+
+
+// Solo migrar SI NO estamos en Testing
+if (!app.Environment.IsEnvironment("Testing"))
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate(); 
+using var scope = app.Services.CreateScope();
+var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+db.Database.Migrate();
 }
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "RestaurantAPI v1");
     });
+    app.MapGet("/", () => Results.Redirect("/swagger"));
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseAuthorization();
 app.MapControllers();
+
 app.Run();
+
+// para los test
+public partial class Program { }
