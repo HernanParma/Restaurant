@@ -16,10 +16,10 @@ namespace Application.Services
         private readonly IOrderCommand _orderCommand;
 
         private const int Pending = 1;
-        private const int InPreparation = 2;  
+        private const int InProgress = 2;
         private const int Ready = 3;
-        private const int Delivered = 4;
-        private const int Cancelled = 5;      
+        private const int Delivery = 4;
+        private const int Closed = 5;
 
         public UpdateOrderItemStatusService(IOrderQuery orderQuery, IStatusQuery statusQuery, IOrderCommand orderCommand)
         {
@@ -28,7 +28,8 @@ namespace Application.Services
             _orderCommand = orderCommand;
         }
 
-        public async Task<OrderUpdatedResponseDto> UpdateItemStatusAsync(long orderId, long itemId, OrderItemStatusUpdateDto dto, CancellationToken ct = default)
+        public async Task<OrderUpdatedResponseDto> UpdateItemStatusAsync(
+            long orderId, long itemId, OrderItemStatusUpdateDto dto, CancellationToken ct = default)
         {
             if (dto is null) throw new BusinessRuleException("Body requerido.");
             var newStatus = dto.Status;
@@ -44,7 +45,7 @@ namespace Application.Services
                 throw new BusinessRuleException("Transición de estado no permitida");
 
             var allItemStatuses = (await _orderQuery.GetOrderItemStatusIdsAsync(orderId, ct)).ToList();
-            var idx = allItemStatuses.FindIndex(s => s == current); 
+            var idx = allItemStatuses.FindIndex(s => s == current);
             if (idx >= 0) allItemStatuses[idx] = newStatus;
 
             var newOverall = ComputeOverallStatus(allItemStatuses);
@@ -54,39 +55,42 @@ namespace Application.Services
 
         private static bool IsAllowedTransition(int from, int to)
         {
-          
+            if (from == to) return true; 
 
-            if (from == to) return true;
-
-            return from switch
+            return (from, to) switch
             {
-                var f when f == Pending => to is InPreparation or Cancelled,
-                var f when f == InPreparation => to is Ready or Cancelled,
-                var f when f == Ready => to is Delivered or Cancelled,
-                var f when f == Delivered => false,
-                var f when f == Cancelled => false,
+                (Pending, InProgress) => true,
+                (InProgress, Ready) => true,
+                (Ready, Delivery) => true,
+                (Delivery, Closed) => true,
                 _ => false
             };
         }
 
-        private static int ComputeOverallStatus(System.Collections.Generic.IReadOnlyList<int> itemStatuses)
+        private static int ComputeOverallStatus(IReadOnlyList<int> s)
         {
-           
-            if (itemStatuses.Count == 0) return Pending;
+            if (s.Count == 0) return Pending;
 
-            bool anyInPrep = itemStatuses.Any(s => s == InPreparation);
-            bool anyPending = itemStatuses.Any(s => s == Pending);
-            bool anyReady = itemStatuses.Any(s => s == Ready);
-            bool anyDelivered = itemStatuses.Any(s => s == Delivered);
-            bool anyNonDelivered = itemStatuses.Any(s => s != Delivered);
+            bool anyPending = s.Any(x => x == Pending);
+            bool anyInProgress = s.Any(x => x == InProgress);
+            bool anyReady = s.Any(x => x == Ready);
+            bool anyDelivery = s.Any(x => x == Delivery);
+            bool anyClosed = s.Any(x => x == Closed);
 
-            if (!anyNonDelivered) return Delivered; // todos delivered
+            if (s.All(x => x == Closed)) return Closed;
 
-            if (!anyPending && !anyInPrep && anyReady) return Ready;
+            if (anyDelivery && s.All(x => x == Ready || x == Delivery || x == Closed))
+                return Delivery;
 
-            if (anyInPrep) return InPreparation;
+            if (!anyDelivery && !anyInProgress && !anyPending && anyReady)
+                return Ready;
+
+            if (anyInProgress) return InProgress;
+
+            if (anyPending) return Pending;
 
             return Pending;
         }
     }
+
 }

@@ -33,13 +33,13 @@ namespace Application.Services
             if (dto.Items.Any(i => i.Quantity <= 0))
                 throw new BusinessRuleException("Las cantidades deben ser mayores a 0.");
 
-            // 1) Debe existir y no estar cerrada
+            // Debe existir y no estar cerrada
             var (exists, statusId) = await _orderQuery.GetExistsAndStatusAsync(orderId, ct);
             if (!exists) throw new NotFoundException("Orden no encontrada");
             if (_closedStatuses.Contains(statusId))
                 throw new BusinessRuleException("No se puede modificar una orden que ya está cerrada");
 
-            // 2) Validar platos activos
+            // Valido platos activos
             var ids = dto.Items.Select(i => i.Id).ToArray();
             var dishes = await _dishQuery.GetBasicByIdsAsync(ids, ct);
             if (dishes.Count != ids.Length)
@@ -47,7 +47,7 @@ namespace Application.Services
             if (dishes.Any(d => !d.IsActive))
                 throw new BusinessRuleException("No se pueden agregar items de platos inactivos.");
 
-            // 3) Construir nuevos items a persistir y total
+            // Construyo nuevos items a persistir y total
             var newItems = dto.Items.Select(i =>
             {
                 var db = dishes.First(d => d.Id == i.Id);
@@ -62,7 +62,6 @@ namespace Application.Services
 
             var newTotal = newItems.Sum(x => x.UnitPrice * x.Quantity);
 
-            // 4) Persistir (reemplazo full de items)
             return await _orderCommand.UpdateItemsAsync(orderId, newItems, newTotal, ct);
         }
     }

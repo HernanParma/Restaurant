@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Dtos;
-using Application.Exceptions; // BusinessRuleException
+using Application.Exceptions; 
 using Application.Interfaces;
 using Application.Queries;
-
 namespace Application.Services
 {
     public sealed class GetOrdersService : IGetOrdersService
@@ -16,7 +15,7 @@ namespace Application.Services
 
         public async Task<IReadOnlyList<OrderListDto>> SearchAsync(OrderFilterQuery filter, CancellationToken ct = default)
         {
-            if (filter is null) filter = new OrderFilterQuery();
+            filter ??= new OrderFilterQuery();
 
             if (filter.From.HasValue && filter.To.HasValue && filter.From.Value > filter.To.Value)
                 throw new BusinessRuleException("Rango de fechas inválido");

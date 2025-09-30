@@ -11,6 +11,7 @@ namespace Application.Interfaces
     {
         Task<IReadOnlyList<DeliveryTypeDto>> GetAllAsync(CancellationToken ct);
         Task<bool> ExistsAsync(int deliveryTypeId, CancellationToken ct = default);
+        Task<DeliveryTypeDto?> GetByIdAsync(int id, CancellationToken ct = default);
 
     }
 }

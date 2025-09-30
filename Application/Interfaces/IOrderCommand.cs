@@ -15,7 +15,6 @@ namespace Application.Interfaces
         CancellationToken ct = default);
     }
 
-    // Modelo interno que el Service prepara para el Command
     public class CreateOrderCommandModel
     {
         public int DeliveryTypeId { get; set; }

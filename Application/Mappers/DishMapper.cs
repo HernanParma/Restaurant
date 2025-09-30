@@ -10,12 +10,15 @@ namespace Application.Mappers
         {
             Id = d.DishId,
             Name = d.Name,
-            Description = d.Description,
+            Description = d.Description ?? string.Empty,
             Price = d.Price,
-            IsActive = d.Available,
-            Image = d.ImageUrl,
-            Category = d.Category == null ? null
-                        : new CategoryDto { Id = d.Category.Id, Name = d.Category.Name },
+            Available = d.Available,
+            ImageUrl = d.ImageUrl ?? string.Empty,
+            Category = new CategoryLiteDto
+            {
+                Id = d.CategoryId,
+                Name = d.Category.Name
+            },
             CreatedAt = d.CreateDate,
             UpdatedAt = d.UpdateDate
         };

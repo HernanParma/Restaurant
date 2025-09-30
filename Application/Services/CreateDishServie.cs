@@ -22,7 +22,7 @@ namespace Application.Services
 
         public async Task<DishResponseDto> CreateAsync(DishCreateDto dto, CancellationToken ct = default)
         {
-            // Reglas de negocio (no de forma):
+            // Reglas de negocio 
             if (dto.Price <= 0)
                 throw new BusinessRuleException("El precio debe ser mayor a cero.");
 
@@ -33,7 +33,6 @@ namespace Application.Services
             if (nameTaken)
                 throw new ConflictException("Ya existe un plato con ese nombre.");
 
-            // Persistencia delegada al command (sin reglas)
             return await _command.CreateAsync(dto, ct);
         }
     }

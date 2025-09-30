@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Application.Dtos;
+﻿using Application.Dtos;
 using Application.Interfaces;
+using Application.Queries;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RestaurantAPI.Controllers
 {
@@ -35,19 +36,19 @@ namespace RestaurantAPI.Controllers
             _updateItemStatus = updateItemStatus;
         }
 
+
         [HttpPost]
         [SwaggerOperation(
-            Summary = "Crear nueva orden",
-            Description = "Valida platos activos, cantidades, calcula total y crea la orden con ítems."
+        Summary = "Crear nueva orden",
+        Description = "Valida platos activos, cantidades, calcula total y crea la orden con ítems."
         )]
         [ProducesResponseType(typeof(OrderCreatedResponseDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<OrderCreatedResponseDto>> Create([FromBody] OrderCreateDto dto, CancellationToken ct)
         {
             var res = await _create.CreateAsync(dto, ct);
-            return StatusCode(StatusCodes.Status201Created, res);
+            return CreatedAtRoute("GetOrderById", new { id = res.OrderNumber }, res);
         }
-
         [HttpGet]
         [SwaggerOperation(
            Summary = "Buscar órdenes",

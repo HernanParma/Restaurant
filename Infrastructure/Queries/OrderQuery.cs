@@ -28,7 +28,6 @@ namespace Infrastructure.Queries
             if (filter.Status.HasValue)
                 q = q.Where(o => o.OverallStatusId == filter.Status.Value);
 
-            // proyección directa a DTO (evita N+1)
             return await q
                 .OrderByDescending(o => o.CreateDate)
                 .Select(o => new OrderListDto

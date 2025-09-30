@@ -27,14 +27,12 @@ namespace Infrastructure.Commands
                 CreateDate = DateTime.UtcNow
             };
 
-            // Crear items
             foreach (var it in model.Items)
             {
                 order.Items.Add(new OrderItem
                 {
                     DishId = it.DishId,
                     Quantity = it.Quantity,
-                    //UnitPrice = it.UnitPrice,
                     Notes = it.Notes,
                     CreateDate = DateTime.UtcNow,
                     StatusId = model.InitialStatusId
@@ -64,7 +62,6 @@ namespace Infrastructure.Commands
             if (order is null)
                 throw new KeyNotFoundException("Orden no encontrada");
 
-            // Reemplazo full de items:
             _db.OrderItems.RemoveRange(order.Items);
 
             foreach (var it in newItems)
@@ -73,7 +70,6 @@ namespace Infrastructure.Commands
                 {
                     DishId = it.DishId,
                     Quantity = it.Quantity,
-                  //UnitPrice = it.UnitPrice,
                     Notes = it.Notes,
                     CreateDate = DateTime.UtcNow,
                     StatusId = order.OverallStatusId 

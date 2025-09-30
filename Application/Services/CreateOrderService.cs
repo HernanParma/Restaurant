@@ -1,11 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Text.RegularExpressions;
+using Application.Constants;
 using Application.Dtos;
 using Application.Exceptions;
 using Application.Interfaces;
-using Application.Queries;
 
 namespace Application.Services
 {
@@ -33,23 +30,55 @@ namespace Application.Services
             if (dto.Delivery == null || dto.Delivery.Id <= 0 || string.IsNullOrWhiteSpace(dto.Delivery.To))
                 throw new BusinessRuleException("Debe especificar tipo de entrega y destino.");
 
-            if (!await _deliveryQuery.ExistsAsync(dto.Delivery.Id, ct))
+            var deliveryType = await _deliveryQuery.GetByIdAsync(dto.Delivery.Id, ct);
+            if (deliveryType is null)
                 throw new NotFoundException("El tipo de entrega especificado no existe.");
+
+            var to = dto.Delivery.To.Trim();
+
+            
+            static bool IsTable(string s) =>
+                Regex.IsMatch(s, @"^Mesa\s+\d+$", RegexOptions.IgnoreCase);
+
+            static bool LooksLikeAddress(string s) =>
+                Regex.IsMatch(s, @"\d");
+
+            static bool LooksLikePersonName(string s) =>
+                Regex.IsMatch(s, @"^\p{L}[\p{L}\s'’-]*$");
+
+            switch (deliveryType.Id)
+            {
+                case DeliveryTypeIds.DineIn:   
+                    if (!IsTable(to))
+                        throw new BusinessRuleException("Para 'Dine in' el destino debe ser 'Mesa <número>'.");
+                    break;
+
+                case DeliveryTypeIds.Delivery: 
+                    if (!LooksLikeAddress(to))
+                        throw new BusinessRuleException("Para 'Delivery' el destino debe parecer una dirección.");
+                    break;
+
+                case DeliveryTypeIds.TakeAway: 
+                    if (!LooksLikePersonName(to))
+                        throw new BusinessRuleException("Para 'Take away' el destino debe ser un nombre de persona.");
+                    break;
+
+                default:
+                    throw new BusinessRuleException("Tipo de entrega no soportado.");
+            }
 
             var ids = dto.Items.Select(i => i.Id).ToArray();
             var dishes = await _dishQuery.GetBasicByIdsAsync(ids, ct);
 
             if (dishes.Count != ids.Length)
-                throw new BusinessRuleException("El plato especificado no existe o no está disponible");
+                throw new BusinessRuleException("El plato especificado no existe o no está disponible.");
 
             if (dishes.Any(d => !d.IsActive))
                 throw new BusinessRuleException("El plato especificado no existe o no está disponible.");
-
-            // Construir modelo para el Command
             var model = new CreateOrderCommandModel
             {
-                DeliveryTypeId = dto.Delivery.Id,
-                DeliveryTo = dto.Delivery.To,
+                DeliveryTypeId = deliveryType.Id, 
+                DeliveryTo = to,
                 Notes = dto.Notes,
                 Items = dto.Items.Select(i =>
                 {
@@ -65,7 +94,7 @@ namespace Application.Services
             };
 
             model.TotalAmount = model.Items.Sum(x => x.UnitPrice * x.Quantity);
-            model.InitialStatusId = 1; // Pending (ajustar a tus seeds)
+            model.InitialStatusId = 1; 
 
             return await _orderCommand.CreateAsync(model, ct);
         }

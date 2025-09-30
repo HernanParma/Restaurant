@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Dtos;
-
+using Application.Queries;
 namespace Application.Interfaces
 {
     public interface IGetOrdersService

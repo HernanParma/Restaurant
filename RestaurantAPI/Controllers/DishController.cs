@@ -38,8 +38,18 @@ namespace RestaurantAPI.Controllers
         [HttpPost]
         [SwaggerOperation(Summary = "Crear nuevo plato")]
         [ProducesResponseType(typeof(DishResponseDto), StatusCodes.Status201Created)]
-        public async Task<ActionResult<DishResponseDto>> Create([FromBody] DishCreateDto dto, CancellationToken ct)
+        public async Task<ActionResult<DishResponseDto>> Create([FromBody] DishCreateRequestDto req, CancellationToken ct)
         {
+            var dto = new DishCreateDto
+            {
+                Name = req.Name,
+                Description = req.Description,
+                Price = req.Price,
+                Category = req.Category,
+                Image = req.Image,
+                IsActive = true
+            };
+
             var created = await _createService.CreateAsync(dto, ct);
             return CreatedAtRoute("GetDishById", new { id = created.Id }, created);
         }
@@ -54,6 +64,7 @@ namespace RestaurantAPI.Controllers
         }
 
         [HttpGet]
+        [SwaggerOperation(Summary = "Buscar platos")]
         public async Task<ActionResult<IEnumerable<DishResponseDto>>> Get([FromQuery] DishFilterQuery filter, CancellationToken ct)
         {
             var results = await _readService.SearchOrAllAsync(filter, ct);
@@ -61,16 +72,16 @@ namespace RestaurantAPI.Controllers
         }
 
         [HttpGet("{id:guid}", Name = "GetDishById")]
+        [SwaggerOperation(Summary = "Obtener plato por ID")]
+
         public async Task<ActionResult<DishResponseDto>> GetById(Guid id, CancellationToken ct)
         {
             var dish = await _query.GetByIdAsync(id, ct);
             return dish is null ? NotFound() : Ok(dish);
         }
         [HttpDelete("{id:guid}")]
-        [SwaggerOperation(
-        Summary = "Eliminar plato",
-        Description = "Elimina un plato. Solo se eliminan platos que no estén en órdenes activas. Se recomienda desactivar en lugar de eliminar."
-        )]
+        [SwaggerOperation(Summary = "Eliminar plato",
+        Description = "Elimina un plato. Solo se eliminan platos que no estén en órdenes activas. Se recomienda desactivar en lugar de eliminar.")]
         [ProducesResponseType(typeof(DishResponseDto), StatusCodes.Status200OK)]
         public async Task<ActionResult<DishResponseDto>> Delete(Guid id, CancellationToken ct)
         {
