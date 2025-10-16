@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Dtos;
-using Application.Exceptions; 
+using Application.Exceptions;
 using Application.Interfaces;
 using Application.Queries;
+
 namespace Application.Services
 {
     public sealed class GetOrdersService : IGetOrdersService
@@ -19,6 +19,8 @@ namespace Application.Services
 
             if (filter.From.HasValue && filter.To.HasValue && filter.From.Value > filter.To.Value)
                 throw new BusinessRuleException("Rango de fechas inválido");
+
+            filter.DeliveryTo = string.IsNullOrWhiteSpace(filter.DeliveryTo) ? null : filter.DeliveryTo.Trim();
 
             return await _query.SearchAsync(filter, ct);
         }

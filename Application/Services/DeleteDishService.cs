@@ -18,7 +18,6 @@ namespace Application.Services
             _dishQuery = dishQuery;
             _dishCommand = dishCommand;
         }
-
         public async Task<DishResponseDto> DeleteAsync(Guid id, CancellationToken ct = default)
         {
             

@@ -10,9 +10,7 @@ namespace Application.Services
     public sealed class GetOrderByIdService : IGetOrderByIdService
     {
         private readonly IOrderQuery _query;
-
         public GetOrderByIdService(IOrderQuery query) => _query = query;
-
         public async Task<OrderListDto> GetAsync(long orderId, CancellationToken ct = default)
         {
             var order = await _query.GetByIdAsync(orderId, ct);

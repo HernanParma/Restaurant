@@ -19,11 +19,19 @@ namespace Infrastructure.Queries
         {
             var q = _db.Orders.AsNoTracking().AsQueryable();
 
-            if (filter.From.HasValue)
-                q = q.Where(o => o.CreateDate >= filter.From.Value);
+            if (!string.IsNullOrWhiteSpace(filter.DeliveryTo))
+            {
+                var term = filter.DeliveryTo.Trim().ToLower();
+                q = q.Where(o => o.DeliveryTo != null && o.DeliveryTo.ToLower().Contains(term));
+            }
 
-            if (filter.To.HasValue)
-                q = q.Where(o => o.CreateDate <= filter.To.Value);
+            DateTime? from = filter.From?.UtcDateTime;
+            DateTime? toExcl = filter.To?.UtcDateTime.AddDays(1);
+
+            if (from.HasValue)
+                q = q.Where(o => o.CreateDate >= from.Value);
+            if (toExcl.HasValue)
+                q = q.Where(o => o.CreateDate < toExcl.Value);
 
             if (filter.Status.HasValue)
                 q = q.Where(o => o.OverallStatusId == filter.Status.Value);
@@ -68,6 +76,7 @@ namespace Infrastructure.Queries
                 })
                 .ToListAsync(ct);
         }
+
         public async Task<(bool exists, int statusId)> GetExistsAndStatusAsync(long orderId, CancellationToken ct = default)
         {
             var row = await _db.Orders
@@ -78,6 +87,7 @@ namespace Infrastructure.Queries
 
             return row is null ? (false, 0) : (true, row.OverallStatusId);
         }
+
         public async Task<OrderListDto?> GetByIdAsync(long orderId, CancellationToken ct = default)
         {
             return await _db.Orders
@@ -121,6 +131,7 @@ namespace Infrastructure.Queries
                 })
                 .FirstOrDefaultAsync(ct);
         }
+
         public async Task<(bool orderExists, bool itemExists, int currentItemStatusId)> GetItemStatusAsync(long orderId, long itemId, CancellationToken ct = default)
         {
             var item = await _db.OrderItems

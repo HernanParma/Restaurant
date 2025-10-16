@@ -7,6 +7,6 @@ namespace Application.Interfaces
 {
     public interface IUpdateOrderService
     {
-        Task<OrderUpdatedResponseDto> UpdateAsync(long orderId, OrderUpdateDto dto, CancellationToken ct = default);
+        Task<OrderUpdatedResponseDto> PatchAsync(long orderId, OrderPatchDto dto, CancellationToken ct = default);
     }
 }

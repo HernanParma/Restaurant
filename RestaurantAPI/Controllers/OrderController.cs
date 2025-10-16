@@ -62,17 +62,17 @@ namespace RestaurantAPI.Controllers
             return Ok(list);
         }
 
-        [HttpPut("{id:long}")]
+        [HttpPatch("{id:long}")]
         [SwaggerOperation(
-            Summary = "Actualizar orden existente",
-            Description = "Reemplaza los items de la orden (solo órdenes no cerradas). Valida platos activos y recalcúla el total."
+        Summary = "Actualizar orden existente",
+        Description = "Aplica cambios parciales: datos de la orden y operaciones sobre ítems (add/update/remove). Recalcula el total en servidor."
         )]
         [ProducesResponseType(typeof(OrderUpdatedResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<OrderUpdatedResponseDto>> Update(long id, [FromBody] OrderUpdateDto dto, CancellationToken ct)
+        public async Task<ActionResult<OrderUpdatedResponseDto>> Patch(long id, [FromBody] OrderPatchDto dto, CancellationToken ct)
         {
-            var res = await _update.UpdateAsync(id, dto, ct);
+            var res = await _update.PatchAsync(id, dto, ct); 
             return Ok(res);
         }
 
@@ -86,7 +86,7 @@ namespace RestaurantAPI.Controllers
         public async Task<ActionResult<OrderListDto>> GetById(long id, CancellationToken ct)
         {
             var order = await _getById.GetAsync(id, ct);
-            return order is null ? NotFound() : Ok(order);
+            return order is null ? NotFound() : Ok(order); 
         }
 
         [HttpPatch("{id:long}/item/{itemId:long}")]

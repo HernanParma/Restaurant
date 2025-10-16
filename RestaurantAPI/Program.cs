@@ -11,6 +11,23 @@ using Microsoft.OpenApi.Models;
 using RestaurantAPI.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// CORS para el front
+const string FrontPolicy = "FrontPolicy";
+builder.Services.AddCors(o =>
+{
+    o.AddPolicy(FrontPolicy, p => p
+        .WithOrigins(
+            "http://127.0.0.1:5500",
+            "http://localhost:5500",
+            "https://TU-FRONT-PROD.com"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()
+    );
+});
+
 builder.Services.AddControllers()
     .AddJsonOptions(o =>
     {
@@ -21,21 +38,18 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.EnableAnnotations();
-
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "RestaurantAPI", Version = "v1" });
 
     c.TagActionsBy(api =>
     {
         var g = api.GroupName;
         if (!string.IsNullOrWhiteSpace(g)) return new[] { g };
-
         var hasCtrl = api.ActionDescriptor.RouteValues.TryGetValue("controller", out var ctrl);
         return new[] { hasCtrl ? ctrl! : "Default" };
-
     });
     c.DocInclusionPredicate((docName, apiDesc) => true);
 
-    // Mapear enum PriceSort como string con valores “asc/desc”
+    // Enum PriceSort como "asc"/"desc"
     c.MapType<PriceSort>(() => new OpenApiSchema
     {
         Type = "string",
@@ -43,19 +57,19 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// custom
+// DI custom
 builder.Services.AddScoped<ICategoryQuery, CategoryQuery>();
 builder.Services.AddScoped<IDeliveryTypeQuery, DeliveryTypeQuery>();
 builder.Services.AddScoped<IStatusQuery, StatusQuery>();
 builder.Services.AddScoped<ICreateDishService, CreateDishService>();
-builder.Services.AddScoped<IUpdateDishService, UpdateDishService  > ();
+builder.Services.AddScoped<IUpdateDishService, UpdateDishService>();
 builder.Services.AddScoped<IGetAllDishesService, GetAllDishesService>();
 builder.Services.AddScoped<IDishCommand, DishCommand>();
 builder.Services.AddScoped<IDishQuery, DishQuery>();
 builder.Services.AddTransient<ApiExceptionMiddleware>();
 builder.Services.AddScoped<IDeleteDishService, DeleteDishService>();
 builder.Services.AddScoped<ICreateOrderService, CreateOrderService>();
-builder.Services.AddScoped<IOrderCommand, OrderCommand>(); 
+builder.Services.AddScoped<IOrderCommand, OrderCommand>();
 builder.Services.AddScoped<IGetOrdersService, GetOrdersService>();
 builder.Services.AddScoped<IOrderQuery, OrderQuery>();
 builder.Services.AddScoped<IUpdateOrderService, UpdateOrderService>();
@@ -63,34 +77,19 @@ builder.Services.AddScoped<IGetOrderByIdService, GetOrderByIdService>();
 builder.Services.AddScoped<IUpdateOrderItemStatusService, UpdateOrderItemStatusService>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-// En Testing no registro SqlServer (lo inyecta el CustomWebAppFactory)
 if (!builder.Environment.IsEnvironment("Testing"))
 {
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseSqlServer(connectionString));
+    builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString));
 }
 
 var app = builder.Build();
-app.UseMiddleware<ApiExceptionMiddleware>();
 
-
-// Solo migrar SI NO estamos en Testing
-if (!app.Environment.IsEnvironment("Testing"))
-{
-using var scope = app.Services.CreateScope();
-var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-db.Database.Migrate();
-}
 
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
 {
     app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "RestaurantAPI v1");
-    });
-    app.MapGet("/", () => Results.Redirect("/swagger"));
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "RestaurantAPI v1"));
+    app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
 }
 
 if (!app.Environment.IsEnvironment("Testing"))
@@ -98,10 +97,19 @@ if (!app.Environment.IsEnvironment("Testing"))
     app.UseHttpsRedirection();
 }
 
+app.UseRouting();
+
+app.UseCors(FrontPolicy);
+
+app.UseMiddleware<ApiExceptionMiddleware>();
 app.UseAuthorization();
-app.MapControllers();
+
+
+app.MapControllers().RequireCors(FrontPolicy);
+
+
 
 app.Run();
 
-// para los test
+// Para los tests
 public partial class Program { }

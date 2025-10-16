@@ -13,7 +13,6 @@ namespace Application.Dtos
         public decimal Price { get; set; }
         public int Category { get; set; }
         public string? Image { get; set; }
-        //agrego esto porque en los test que mando me fallaba
         public bool IsActive { get; set; } = true;
 
     }

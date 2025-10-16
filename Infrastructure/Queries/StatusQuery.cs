@@ -9,7 +9,6 @@ namespace Infrastructure.Queries
     {
         private readonly AppDbContext _db;
         public StatusQuery(AppDbContext db) => _db = db;
-
         public async Task<IReadOnlyList<StatusDto>> GetAllAsync(CancellationToken ct) =>
         await _db.Statuses.AsNoTracking()
          .OrderBy(x => x.Id)

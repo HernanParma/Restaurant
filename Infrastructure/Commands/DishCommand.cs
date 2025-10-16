@@ -94,10 +94,36 @@ namespace Infrastructure.Commands
             if (entity is null)
                 throw new KeyNotFoundException("Plato no encontrado");
 
-            var cat = await _db.Categories.AsNoTracking()
-                .Where(c => c.Id == entity.CategoryId)
-                .Select(c => new CategoryLiteDto { Id = c.Id, Name = c.Name })
-                .FirstAsync(ct);
+            // ¿Está referenciado en alguna orden, sin importar el estado?
+            var referenced = await _db.OrderItems
+                .AsNoTracking()
+                .AnyAsync(i => i.DishId == id, ct);
+
+            if (referenced)
+            {
+               
+                entity.Available = false;
+                entity.UpdateDate = DateTime.UtcNow;
+                await _db.SaveChangesAsync(ct);
+
+                var cat = await _db.Categories.AsNoTracking()
+                    .Where(c => c.Id == entity.CategoryId)
+                    .Select(c => new CategoryLiteDto { Id = c.Id, Name = c.Name })
+                    .FirstAsync(ct);
+
+                return new DishResponseDto
+                {
+                    Id = entity.DishId,
+                    Name = entity.Name,
+                    Description = entity.Description,
+                    Price = entity.Price,
+                    Category = cat,
+                    ImageUrl = entity.ImageUrl,
+                    Available = entity.Available,
+                    CreatedAt = entity.CreateDate,
+                    UpdatedAt = entity.UpdateDate
+                };
+            }
 
             _db.Dishes.Remove(entity);
             await _db.SaveChangesAsync(ct);
@@ -108,7 +134,10 @@ namespace Infrastructure.Commands
                 Name = entity.Name,
                 Description = entity.Description,
                 Price = entity.Price,
-                Category = cat,                  
+                Category = await _db.Categories.AsNoTracking()
+                    .Where(c => c.Id == entity.CategoryId)
+                    .Select(c => new CategoryLiteDto { Id = c.Id, Name = c.Name })
+                    .FirstAsync(ct),
                 ImageUrl = entity.ImageUrl,
                 Available = entity.Available,
                 CreatedAt = entity.CreateDate,

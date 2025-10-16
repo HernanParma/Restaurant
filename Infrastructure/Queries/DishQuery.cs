@@ -22,7 +22,6 @@ namespace Infrastructure.Queries
                 .Select(DishMapper.ToDtoProjection())
                 .ToListAsync(ct);
         }
-
         public async Task<IEnumerable<DishResponseDto>> SearchAsync(DishFilterQuery q, CancellationToken ct = default)
         {
             var query = _db.Dishes
@@ -68,7 +67,6 @@ namespace Infrastructure.Queries
 
         public Task<bool> ExistsByNameAsync(string name, CancellationToken ct = default)
             => _db.Dishes.AsNoTracking().AnyAsync(d => d.Name == name, ct);
-
         public async Task<bool> IsInActiveOrdersAsync(Guid dishId, CancellationToken ct = default)
         {
             int[] activeStatusIds = { 1, 2 };
@@ -77,7 +75,6 @@ namespace Infrastructure.Queries
                 .Where(o => activeStatusIds.Contains(o.OverallStatusId))
                 .AnyAsync(o => o.Items.Any(i => i.DishId == dishId), ct);
         }
-
         public async Task<IReadOnlyList<DishBasicInfo>> GetBasicByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
         {
             return await _db.Dishes

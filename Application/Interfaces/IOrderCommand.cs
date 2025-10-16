@@ -13,6 +13,8 @@ namespace Application.Interfaces
         IReadOnlyList<OrderItemToPersist> newItems,
         decimal newTotal,
         CancellationToken ct = default);
+        Task<OrderUpdatedResponseDto> PatchAsync(long orderId, OrderPatchDto dto, CancellationToken ct = default);
+
     }
 
     public class CreateOrderCommandModel
