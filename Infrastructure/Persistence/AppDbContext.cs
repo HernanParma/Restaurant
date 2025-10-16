@@ -35,17 +35,17 @@ namespace Infrastructure.Persistence
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // DeliveryType
+            // DeliveryTypes
             modelBuilder.Entity<DeliveryType>(entity =>
             {
                 entity.ToTable("DeliveryType");
                 entity.HasKey(dt => dt.Id);
                 entity.Property(dt => dt.Name).IsRequired().HasMaxLength(25);
 
-                // relación con Order
+                // relación con Order (FK: Order.DeliveryType)
                 entity.HasMany(dt => dt.Orders)
-                      .WithOne(o => o.DeliveryType)
-                      .HasForeignKey(o => o.DeliveryTypeId)
+                      .WithOne(o => o.DeliveryTypes)          
+                      .HasForeignKey(o => o.DeliveryType)     
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -56,10 +56,10 @@ namespace Infrastructure.Persistence
                 entity.HasKey(s => s.Id);
                 entity.Property(s => s.Name).IsRequired().HasMaxLength(25);
 
-                // relación con Order
+                // relación con Order (FK: Order.OverallStatus)
                 entity.HasMany(s => s.Orders)
-                      .WithOne(o => o.OverallStatus)
-                      .HasForeignKey(o => o.OverallStatusId)
+                      .WithOne(o => o.OverallStatuses)        
+                      .HasForeignKey(o => o.OverallStatus)    
                       .OnDelete(DeleteBehavior.Restrict);
 
                 // relación con OrderItem
@@ -97,19 +97,19 @@ namespace Infrastructure.Persistence
                 entity.ToTable("Order");
                 entity.HasKey(o => o.OrderId);
                 entity.Property(o => o.DeliveryTo).IsRequired().HasMaxLength(255);
-                entity.Property(o => o.Notes);
                 entity.Property(o => o.Price).HasColumnType("decimal(18,2)");
                 entity.Property(o => o.CreateDate).IsRequired();
                 entity.Property(o => o.UpdateDate);
-                //relacion con DeliveryType
-                entity.HasOne(o => o.DeliveryType)
+               
+                //relacion con DeliveryTypes
+                entity.HasOne(o => o.DeliveryTypes)
                       .WithMany(dt => dt.Orders)
-                      .HasForeignKey(o => o.DeliveryTypeId)
+                      .HasForeignKey(o => o.DeliveryType)
                       .OnDelete(DeleteBehavior.Restrict);
                 //relacion con Status
-                entity.HasOne(o => o.OverallStatus)
+                entity.HasOne(o => o.OverallStatuses)
                       .WithMany(s => s.Orders)
-                      .HasForeignKey(o => o.OverallStatusId)
+                      .HasForeignKey(o => o.OverallStatus)
                       .OnDelete(DeleteBehavior.Restrict);
                 //relacion con OrderItem
                 entity.HasMany(o => o.Items)

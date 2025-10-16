@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class correcciones : Migration
+    public partial class init1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -60,7 +60,7 @@ namespace Infrastructure.Migrations
                 {
                     DishId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Available = table.Column<bool>(type: "bit", nullable: false),
                     Category = table.Column<int>(type: "int", nullable: false),
@@ -85,8 +85,8 @@ namespace Infrastructure.Migrations
                 {
                     OrderId = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    DeliveryTypeId = table.Column<int>(type: "int", nullable: false),
-                    OverallStatusId = table.Column<int>(type: "int", nullable: false),
+                    DeliveryType = table.Column<int>(type: "int", nullable: false),
+                    OverallStatus = table.Column<int>(type: "int", nullable: false),
                     DeliveryTo = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     Notes = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
@@ -97,14 +97,14 @@ namespace Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_Order", x => x.OrderId);
                     table.ForeignKey(
-                        name: "FK_Order_DeliveryType_DeliveryTypeId",
-                        column: x => x.DeliveryTypeId,
+                        name: "FK_Order_DeliveryType_DeliveryType",
+                        column: x => x.DeliveryType,
                         principalTable: "DeliveryType",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Order_Status_OverallStatusId",
-                        column: x => x.OverallStatusId,
+                        name: "FK_Order_Status_OverallStatus",
+                        column: x => x.OverallStatus,
                         principalTable: "Status",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -191,14 +191,14 @@ namespace Infrastructure.Migrations
                 column: "Category");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Order_DeliveryTypeId",
+                name: "IX_Order_DeliveryType",
                 table: "Order",
-                column: "DeliveryTypeId");
+                column: "DeliveryType");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Order_OverallStatusId",
+                name: "IX_Order_OverallStatus",
                 table: "Order",
-                column: "OverallStatusId");
+                column: "OverallStatus");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderItem_DishId",

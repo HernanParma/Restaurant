@@ -34,7 +34,7 @@ namespace Infrastructure.Queries
                 q = q.Where(o => o.CreateDate < toExcl.Value);
 
             if (filter.Status.HasValue)
-                q = q.Where(o => o.OverallStatusId == filter.Status.Value);
+                q = q.Where(o => o.OverallStatus == filter.Status.Value);
 
             return await q
                 .OrderByDescending(o => o.CreateDate)
@@ -46,13 +46,13 @@ namespace Infrastructure.Queries
                     Notes = o.Notes,
                     Status = new StatusLiteDto
                     {
-                        Id = o.OverallStatus.Id,
-                        Name = o.OverallStatus.Name
+                        Id = o.OverallStatuses.Id,
+                        Name = o.OverallStatuses.Name
                     },
                     DeliveryType = new DeliveryTypeLiteDto
                     {
-                        Id = o.DeliveryType.Id,
-                        Name = o.DeliveryType.Name
+                        Id = o.DeliveryTypes.Id,
+                        Name = o.DeliveryTypes.Name
                     },
                     Items = o.Items.Select(i => new OrderItemListDto
                     {
@@ -82,10 +82,10 @@ namespace Infrastructure.Queries
             var row = await _db.Orders
                 .AsNoTracking()
                 .Where(o => o.OrderId == orderId)
-                .Select(o => new { o.OrderId, o.OverallStatusId })
+                .Select(o => new { o.OrderId, o.OverallStatus })
                 .FirstOrDefaultAsync(ct);
 
-            return row is null ? (false, 0) : (true, row.OverallStatusId);
+            return row is null ? (false, 0) : (true, row.OverallStatus);
         }
 
         public async Task<OrderListDto?> GetByIdAsync(long orderId, CancellationToken ct = default)
@@ -101,13 +101,13 @@ namespace Infrastructure.Queries
                     Notes = o.Notes,
                     Status = new StatusLiteDto
                     {
-                        Id = o.OverallStatus.Id,
-                        Name = o.OverallStatus.Name
+                        Id = o.OverallStatuses.Id,
+                        Name = o.OverallStatuses.Name
                     },
                     DeliveryType = new DeliveryTypeLiteDto
                     {
-                        Id = o.DeliveryType.Id,
-                        Name = o.DeliveryType.Name
+                        Id = o.DeliveryTypes.Id,
+                        Name = o.DeliveryTypes.Name
                     },
                     Items = o.Items.Select(i => new OrderItemListDto
                     {

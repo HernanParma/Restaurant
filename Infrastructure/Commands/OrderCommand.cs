@@ -33,10 +33,10 @@ namespace Infrastructure.Commands
         {
             var order = new Order
             {
-                DeliveryTypeId = model.DeliveryTypeId,
+                DeliveryType = model.DeliveryTypeId,
                 DeliveryTo = model.DeliveryTo,
                 Notes = model.Notes,
-                OverallStatusId = model.InitialStatusId,
+                OverallStatus = model.InitialStatusId,
                 CreateDate = DateTime.UtcNow
             };
 
@@ -73,7 +73,7 @@ namespace Infrastructure.Commands
                 .FirstOrDefaultAsync(o => o.OrderId == orderId, ct)
                 ?? throw new KeyNotFoundException("Orden no encontrada");
 
-            if (order.OverallStatusId >= 2)
+            if (order.OverallStatus >= 2)
                 throw new InvalidOperationException("La orden no admite modificaciones a partir del estado 2.");
 
             if (!string.IsNullOrWhiteSpace(dto.DeliveryTo))
@@ -100,7 +100,7 @@ namespace Infrastructure.Commands
                                     Quantity = qty,
                                     Notes = op.Notes,
                                     CreateDate = DateTime.UtcNow,
-                                    StatusId = order.OverallStatusId
+                                    StatusId = order.OverallStatus
                                 });
                                 break;
                             }
@@ -167,7 +167,7 @@ namespace Infrastructure.Commands
             if (order is null)
                 throw new KeyNotFoundException("Orden no encontrada");
 
-            if (order.OverallStatusId >= BlockEditFromStatusId)
+            if (order.OverallStatus >= BlockEditFromStatusId)
                 throw new InvalidOperationException("La orden no admite modificaciones de ítems a partir del estado 2.");
 
             _db.OrderItems.RemoveRange(order.Items);
@@ -180,7 +180,7 @@ namespace Infrastructure.Commands
                     Quantity = it.Quantity,
                     Notes = it.Notes,
                     CreateDate = DateTime.UtcNow,
-                    StatusId = order.OverallStatusId
+                    StatusId = order.OverallStatus
                 });
             }
 
@@ -222,16 +222,16 @@ namespace Infrastructure.Commands
             var recalculatedOverall = order.Items.Min(i => i.StatusId);
 
             // 3) No permitas retrocesos del global (por seguridad)
-            if (recalculatedOverall < order.OverallStatusId)
+            if (recalculatedOverall < order.OverallStatus)
             {
                 // si no querés lanzar, podés simplemente no cambiarlo
                 throw new InvalidOperationException(
-                    $"No se permite retroceder el estado global de {order.OverallStatusId} a {recalculatedOverall}.");
+                    $"No se permite retroceder el estado global de {order.OverallStatus} a {recalculatedOverall}.");
             }
 
             // 4) Avance global (monótono). Si querés validar saltos, podés hacerlo acá,
             // pero en agregación por ítems suele permitirse el salto directo.
-            order.OverallStatusId = recalculatedOverall;
+            order.OverallStatus = recalculatedOverall;
 
             order.UpdateDate = DateTime.UtcNow;
             await _db.SaveChangesAsync(ct);

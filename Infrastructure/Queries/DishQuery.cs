@@ -72,7 +72,7 @@ namespace Infrastructure.Queries
             int[] activeStatusIds = { 1, 2 };
             return await _db.Orders
                 .AsNoTracking()
-                .Where(o => activeStatusIds.Contains(o.OverallStatusId))
+                .Where(o => activeStatusIds.Contains(o.OverallStatus))
                 .AnyAsync(o => o.Items.Any(i => i.DishId == dishId), ct);
         }
         public async Task<IReadOnlyList<DishBasicInfo>> GetBasicByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)

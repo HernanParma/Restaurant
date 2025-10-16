@@ -6,7 +6,7 @@ using Swashbuckle.AspNetCore.Annotations;
 namespace RestaurantAPI.Controllers;
 
 [ApiController]
-[Route("api/v1/DeliveryType")]
+[Route("api/v1/DeliveryTypes")]
 [ApiExplorerSettings(GroupName = "Dish")]
 public class DeliveryTypesController : ControllerBase
 {
