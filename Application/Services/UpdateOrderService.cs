@@ -15,7 +15,7 @@ namespace Application.Services
         private readonly IDishQuery _dishQuery;
         private readonly IOrderCommand _orderCommand;
 
-        private readonly int[] _closedStatuses = new[] { 3, 4, 5 };
+        private const int Closed = 5;
 
         public UpdateOrderService(IOrderQuery orderQuery, IDishQuery dishQuery, IOrderCommand orderCommand)
         {
@@ -28,8 +28,9 @@ namespace Application.Services
         {
             var (exists, statusId) = await _orderQuery.GetExistsAndStatusAsync(orderId, ct);
             if (!exists) throw new NotFoundException("Orden no encontrada");
-            if (_closedStatuses.Contains(statusId))
-                throw new BusinessRuleException("No se puede modificar una orden que ya está cerrada");
+
+            if (statusId == Closed)
+                throw new BusinessRuleException("No se puede modificar una orden cerrada");
 
             if (dto.Items != null && dto.Items.Count == 0)
                 throw new BusinessRuleException("Si se envían 'items', debe haber al menos una operación.");
@@ -40,6 +41,7 @@ namespace Application.Services
                 {
                     if (string.IsNullOrWhiteSpace(op.Op))
                         throw new BusinessRuleException("Falta 'op' en un item.");
+
                     var kind = op.Op.Trim().ToLowerInvariant();
 
                     if (kind is "add" or "update")

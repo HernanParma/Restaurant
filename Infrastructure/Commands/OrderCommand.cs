@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Dtos;
+using Application.Exceptions;
 using Application.Interfaces;
 using Domain.Entities;
 using Infrastructure.Persistence;
@@ -16,7 +17,7 @@ namespace Infrastructure.Commands
         private readonly AppDbContext _db;
         public OrderCommand(AppDbContext db) => _db = db;
 
-        private const int BlockEditFromStatusId = 2;
+        private const int ClosedStatusId = 5;
 
         private static bool IsValidTransition(int from, int to) => (from, to) switch
         {
@@ -53,8 +54,7 @@ namespace Infrastructure.Commands
             }
 
             if (order.Items.Count == 0)
-                throw new InvalidOperationException("La orden debe contener al menos un ítem.");
-
+                throw new BusinessRuleException("La orden debe contener al menos un ítem.");
             _db.Orders.Add(order);
             order.Price = await RecalculateTotalAsync(order, ct);
             await _db.SaveChangesAsync(ct);
@@ -73,8 +73,8 @@ namespace Infrastructure.Commands
                 .FirstOrDefaultAsync(o => o.OrderId == orderId, ct)
                 ?? throw new KeyNotFoundException("Orden no encontrada");
 
-            if (order.OverallStatus >= 2)
-                throw new InvalidOperationException("La orden no admite modificaciones a partir del estado 2.");
+            if (order.OverallStatus == ClosedStatusId)
+                throw new BusinessRuleException("No se puede modificar una orden que está cerrada.");
 
             if (!string.IsNullOrWhiteSpace(dto.DeliveryTo))
                 order.DeliveryTo = dto.DeliveryTo!;
@@ -83,25 +83,44 @@ namespace Infrastructure.Commands
 
             if (dto.Items is { Count: > 0 })
             {
+                const int Pending = 1;
+
                 foreach (var op in dto.Items)
                 {
-                    var kind = op.Op.Trim().ToLowerInvariant();
+                    var kind = op.Op?.Trim().ToLowerInvariant() ?? "";
+
                     switch (kind)
                     {
                         case "add":
                             {
-                                if (op.DishId is null) throw new InvalidOperationException("DishId requerido para add.");
+                                if (op.DishId is null) throw new BusinessRuleException("DishId requerido para add.");
                                 var qty = (op.Quantity ?? 1);
-                                if (qty <= 0) throw new InvalidOperationException("Cantidad inválida.");
+                                if (qty <= 0) throw new BusinessRuleException("Cantidad inválida.");
+
                                 var dishId = op.DishId.Value;
-                                order.Items.Add(new OrderItem
+                                var notesNorm = (op.Notes ?? "").Trim();
+
+                                var existing = order.Items.FirstOrDefault(i =>
+                                    i.DishId == dishId &&
+                                    string.Equals((i.Notes ?? "").Trim(), notesNorm, StringComparison.Ordinal));
+
+                                if (existing is not null)
                                 {
-                                    DishId = dishId,
-                                    Quantity = qty,
-                                    Notes = op.Notes,
-                                    CreateDate = DateTime.UtcNow,
-                                    StatusId = order.OverallStatus
-                                });
+                                    existing.Quantity += qty;
+                                    existing.StatusId = Pending;
+                                    if (op.Notes is not null) existing.Notes = op.Notes;
+                                }
+                                else
+                                {
+                                    order.Items.Add(new OrderItem
+                                    {
+                                        DishId = dishId,
+                                        Quantity = qty,
+                                        Notes = op.Notes,
+                                        CreateDate = DateTime.UtcNow,
+                                        StatusId = Pending
+                                    });
+                                }
                                 break;
                             }
                         case "update":
@@ -114,12 +133,25 @@ namespace Infrastructure.Commands
 
                                 if (target is null) throw new KeyNotFoundException("Item no encontrado");
 
+                                bool changedMeaningfully = false;
+
                                 if (op.Quantity is int q)
                                 {
-                                    if (q <= 0) throw new InvalidOperationException("Cantidad inválida.");
+                                    if (q <= 0) throw new BusinessRuleException("Cantidad inválida.");
+                                    if (q > target.Quantity) changedMeaningfully = true; 
                                     target.Quantity = q;
                                 }
-                                if (op.Notes is not null) target.Notes = op.Notes;
+
+                                if (op.Notes is not null)
+                                {
+                                    if (!string.Equals((target.Notes ?? "").Trim(), (op.Notes ?? "").Trim(), StringComparison.Ordinal))
+                                        changedMeaningfully = true; 
+                                    target.Notes = op.Notes;
+                                }
+
+                                if (changedMeaningfully)
+                                    target.StatusId = Pending;
+
                                 break;
                             }
                         case "remove":
@@ -134,17 +166,20 @@ namespace Infrastructure.Commands
                                 _db.OrderItems.Remove(target);
                                 break;
                             }
+
                         default:
-                            throw new InvalidOperationException($"Operación inválida: {op.Op}");
+                            throw new BusinessRuleException($"Operación inválida: {op.Op}");
                     }
                 }
             }
 
             if (!order.Items.Any())
-                throw new InvalidOperationException("La orden debe contener al menos un ítem.");
-
+                throw new BusinessRuleException("La orden debe contener al menos un ítem.");
             order.Price = await RecalculateTotalAsync(order, ct);
             order.UpdateDate = DateTime.UtcNow;
+
+            order.OverallStatus = order.Items.Min(i => i.StatusId);
+
             await _db.SaveChangesAsync(ct);
 
             return new OrderUpdatedResponseDto
@@ -167,8 +202,8 @@ namespace Infrastructure.Commands
             if (order is null)
                 throw new KeyNotFoundException("Orden no encontrada");
 
-            if (order.OverallStatus >= BlockEditFromStatusId)
-                throw new InvalidOperationException("La orden no admite modificaciones de ítems a partir del estado 2.");
+            if (order.OverallStatus == ClosedStatusId)
+                throw new BusinessRuleException("La orden no admite modificaciones de ítems porque está cerrada.");
 
             _db.OrderItems.RemoveRange(order.Items);
 
@@ -183,9 +218,8 @@ namespace Infrastructure.Commands
                     StatusId = order.OverallStatus
                 });
             }
-
             if (order.Items.Count == 0)
-                throw new InvalidOperationException("La orden debe contener al menos un ítem.");
+                throw new BusinessRuleException("La orden debe contener al menos un ítem.");
 
             order.Price = await RecalculateTotalAsync(order, ct);
             order.UpdateDate = DateTime.UtcNow;
@@ -204,7 +238,7 @@ namespace Infrastructure.Commands
     long orderId,
     long itemId,
     int newItemStatusId,
-    int _ /* ignorado: newOverallStatusId */,
+    int _,
     CancellationToken ct = default)
         {
             var order = await _db.Orders
@@ -212,26 +246,15 @@ namespace Infrastructure.Commands
                 .FirstOrDefaultAsync(o => o.OrderId == orderId, ct)
                 ?? throw new KeyNotFoundException("Orden no encontrada");
 
+            if (order.OverallStatus == ClosedStatusId)
+                throw new BusinessRuleException("La orden está cerrada. No se pueden cambiar estados.");
+
             var item = order.Items.FirstOrDefault(i => i.OrderItemId == itemId)
                        ?? throw new KeyNotFoundException("Item no encontrado");
 
-            // 1) Actualizá el estado del ítem
             item.StatusId = newItemStatusId;
 
-            // 2) Recalculá el estado global como el "más atrasado" (mínimo de los ítems)
-            var recalculatedOverall = order.Items.Min(i => i.StatusId);
-
-            // 3) No permitas retrocesos del global (por seguridad)
-            if (recalculatedOverall < order.OverallStatus)
-            {
-                // si no querés lanzar, podés simplemente no cambiarlo
-                throw new InvalidOperationException(
-                    $"No se permite retroceder el estado global de {order.OverallStatus} a {recalculatedOverall}.");
-            }
-
-            // 4) Avance global (monótono). Si querés validar saltos, podés hacerlo acá,
-            // pero en agregación por ítems suele permitirse el salto directo.
-            order.OverallStatus = recalculatedOverall;
+            order.OverallStatus = order.Items.Min(i => i.StatusId);
 
             order.UpdateDate = DateTime.UtcNow;
             await _db.SaveChangesAsync(ct);
@@ -243,9 +266,6 @@ namespace Infrastructure.Commands
                 UpdateAt = order.UpdateDate ?? DateTime.UtcNow
             };
         }
-
-
-
         private async Task<decimal> RecalculateTotalAsync(Order order, CancellationToken ct)
         {
             var dishIds = order.Items.Select(i => i.DishId).Distinct().ToList();
@@ -259,7 +279,7 @@ namespace Infrastructure.Commands
 
             var missing = dishIds.Where(id => !priceMap.ContainsKey(id)).ToList();
             if (missing.Count > 0)
-                throw new InvalidOperationException($"Hay ítems con Dish inexistente: {string.Join(", ", missing)}");
+                throw new BusinessRuleException($"Hay ítems con Dish inexistente: {string.Join(", ", missing)}");
 
             var total = order.Items.Sum(i => priceMap[i.DishId] * i.Quantity);
 

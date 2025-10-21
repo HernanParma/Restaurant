@@ -65,6 +65,7 @@ namespace Infrastructure.Commands
             entity.Price = dto.Price;
             entity.CategoryId = dto.Category;
             entity.Available = dto.IsActive;
+            entity.ImageUrl = dto.Image;
             entity.UpdateDate = DateTime.UtcNow;
 
             await _db.SaveChangesAsync(ct);
